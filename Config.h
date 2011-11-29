@@ -113,7 +113,7 @@
 #elif defined(DEFAULT_X64_CODEGEN)
   #define TARGET_TRIPLE_STRING "x86_64-unknown-linux"
 #elif defined(DEFAULT_MIPS_CODEGEN)
-  #define TARGET_TRIPLE_STRING "mips-unknown-linux"
+  #define TARGET_TRIPLE_STRING "mipsel-unknown-linux"
 #endif
 
 #if (defined(__VFP_FP__) && !defined(__SOFTFP__))
