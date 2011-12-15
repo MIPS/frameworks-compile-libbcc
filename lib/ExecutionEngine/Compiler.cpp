@@ -54,12 +54,12 @@
 #include "llvm/Target/TargetData.h"
 #include "llvm/Target/TargetMachine.h"
 #include "llvm/Target/TargetOptions.h"
-#include "llvm/Target/TargetRegistry.h"
-#include "llvm/Target/TargetSelect.h"
 
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/FormattedStream.h"
 #include "llvm/Support/MemoryBuffer.h"
+#include "llvm/Support/TargetRegistry.h"
+#include "llvm/Support/TargetSelect.h"
 
 #include "llvm/Type.h"
 #include "llvm/GlobalValue.h"
@@ -69,6 +69,7 @@
 #include "llvm/Module.h"
 #include "llvm/PassManager.h"
 #include "llvm/Value.h"
+#include "llvm/ExecutionEngine/ExecutionEngine.h"
 
 #include <errno.h>
 #include <sys/file.h>
@@ -82,6 +83,10 @@
 #include <iterator>
 #include <string>
 #include <vector>
+
+extern "C" void LLVMInitializeMipsTargetMC();
+extern "C" void LLVMInitializeMipsTargetInfo();
+extern "C" void LLVMInitializeMipsTarget();
 
 namespace bcc {
 
@@ -167,6 +172,13 @@ void Compiler::GlobalInitialization() {
   LLVMInitializeX86Target();
 #endif
 
+#if defined(PROVIDE_MIPS_CODEGEN)
+//  LLVMInitializeMipsAsmPrinter();
+  LLVMInitializeMipsTargetMC();
+  LLVMInitializeMipsTargetInfo();
+  LLVMInitializeMipsTarget();
+#endif
+
 #if USE_DISASSEMBLER
   InitializeDisassembler();
 #endif
@@ -199,7 +211,7 @@ void Compiler::GlobalInitialization() {
 #else
   // This is set for the linker (specify how large of the virtual addresses
   // we can access for all unknown symbols.)
-  llvm::TargetMachine::setCodeModel(llvm::CodeModel::Small);
+//  llvm::EngineBuilder::setCodeModel(llvm::CodeModel::Small);
 #endif
 
   // Register the scheduler
@@ -208,10 +220,15 @@ void Compiler::GlobalInitialization() {
   // Register allocation policy:
   //  createFastRegisterAllocator: fast but bad quality
   //  createLinearScanRegisterAllocator: not so fast but good quality
+#if defined(FORCE_MIPS_CODEGEN)
+// PJ - MIPS - force FastRegisterAllocator
+llvm::RegisterRegAlloc::setDefault (llvm::createFastRegisterAllocator);
+#else
   llvm::RegisterRegAlloc::setDefault
     ((CodeGenOptLevel == llvm::CodeGenOpt::None) ?
      llvm::createFastRegisterAllocator :
      llvm::createLinearScanRegisterAllocator);
+#endif
 
 #if USE_CACHE
   // Read in SHA1 checksum of libbcc and libRS.
@@ -278,7 +295,7 @@ llvm::Module *Compiler::parseBitcodeFile(llvm::MemoryBuffer *MEM) {
 
 
 int Compiler::linkModule(llvm::Module *moduleWith) {
-  if (llvm::Linker::LinkModules(mModule, moduleWith, &mError) != 0) {
+  if (llvm::Linker::LinkModules(mModule, moduleWith, llvm::Linker::DestroySource, &mError) != 0) {
     return hasError();
   }
 
@@ -661,7 +678,7 @@ int Compiler::runMCCodeGen(llvm::TargetData *TD, llvm::TargetMachine *TM) {
   // Add MC code generation passes to pass manager
   llvm::MCContext *Ctx;
   if (TM->addPassesToEmitMC(MCCodeGenPasses, Ctx, OutSVOS,
-                            CodeGenOptLevel, false)) {
+                            /*CodeGenOptLevel, */false)) {
     setError("Fail to add passes to emit file");
     return 1;
   }

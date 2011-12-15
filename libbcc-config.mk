@@ -60,6 +60,10 @@ else
 libbcc_USE_DISASSEMBLER := 1
 endif
 
+ifeq ($(TARGET_ARCH),mips)
+  libbcc_USE_DISASSEMBLER := 0
+endif
+
 
 #=====================================================================
 # Common Variables
@@ -81,12 +85,12 @@ ifeq ($(TARGET_ARCH),arm)
   ifeq (true,$(ARCH_ARM_HAVE_NEON))
     libbcc_CFLAGS += -DARCH_ARM_HAVE_NEON
   endif
-else
-  ifeq ($(TARGET_ARCH),x86)
-    libbcc_CFLAGS += -DFORCE_X86_CODEGEN=1
-  else
-    $(error Unsupported TARGET_ARCH $(TARGET_ARCH))
-  endif
+endif
+ifeq ($(TARGET_ARCH),x86)
+  libbcc_CFLAGS += -DFORCE_X86_CODEGEN=1
+endif
+ifeq ($(TARGET_ARCH),mips)
+  libbcc_CFLAGS += -DFORCE_MIPS_CODEGEN=1
 endif
 
 # Include File Search Path
