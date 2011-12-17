@@ -42,7 +42,10 @@ libbcinfo_STATIC_LIBRARIES := \
   libLLVMBitWriter \
   libLLVMCore \
   libLLVMSupport \
-  libLLVMBitReader_2_7 \
+
+ifneq ($(TARGET_ARCH),mips)
+libbcinfo_STATIC_LIBRARIES += libLLVMBitReader_2_7
+endif
 
 LLVM_ROOT_PATH := external/llvm
 
@@ -56,6 +59,10 @@ intermediates := $(local-intermediates-dir)
 LOCAL_SRC_FILES := $(libbcinfo_SRC_FILES)
 
 LOCAL_CFLAGS += $(local_cflags_for_libbcinfo)
+
+ifeq ($(TARGET_ARCH),mips)
+  LOCAL_CFLAGS += -DPROVIDE_MIPS_CODEGEN
+endif
 
 LOCAL_C_INCLUDES := $(libbcinfo_C_INCLUDES)
 
@@ -75,6 +82,10 @@ LOCAL_IS_HOST_MODULE := true
 LOCAL_SRC_FILES := $(libbcinfo_SRC_FILES)
 
 LOCAL_CFLAGS += $(local_cflags_for_libbcinfo)
+
+ifeq ($(TARGET_ARCH),mips)
+  LOCAL_CFLAGS += -DPROVIDE_MIPS_CODEGEN
+endif
 
 LOCAL_C_INCLUDES := $(libbcinfo_C_INCLUDES)
 

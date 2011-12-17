@@ -60,6 +60,10 @@ else
 libbcc_USE_DISASSEMBLER := 1
 endif
 
+ifeq ($(TARGET_ARCH),mips)
+  libbcc_USE_DISASSEMBLER := 0
+endif
+
 
 #=====================================================================
 # Common Variables

@@ -64,26 +64,26 @@ ifeq ($(TARGET_ARCH),arm)
     lib/arm/truncdfsf2vfp.S \
     lib/arm/unorddf2vfp.S \
     lib/arm/unordsf2vfp.S
-else
-  ifeq ($(TARGET_ARCH),x86) # We don't support x86-64 right now
-    LOCAL_SRC_FILES += \
-      lib/i386/ashldi3.S \
-      lib/i386/ashrdi3.S \
-      lib/i386/divdi3.S \
-      lib/i386/floatdidf.S \
-      lib/i386/floatdisf.S \
-      lib/i386/floatdixf.S \
-      lib/i386/floatundidf.S \
-      lib/i386/floatundisf.S \
-      lib/i386/floatundixf.S \
-      lib/i386/lshrdi3.S \
-      lib/i386/moddi3.S \
-      lib/i386/muldi3.S \
-      lib/i386/udivdi3.S \
-      lib/i386/umoddi3.S
-  else
-    $(error Unsupported TARGET_ARCH $(TARGET_ARCH))
-  endif
+endif
+ifeq ($(TARGET_ARCH),x86) # We don't support x86-64 right now
+  LOCAL_SRC_FILES += \
+    lib/i386/ashldi3.S \
+    lib/i386/ashrdi3.S \
+    lib/i386/divdi3.S \
+    lib/i386/floatdidf.S \
+    lib/i386/floatdisf.S \
+    lib/i386/floatdixf.S \
+    lib/i386/floatundidf.S \
+    lib/i386/floatundisf.S \
+    lib/i386/floatundixf.S \
+    lib/i386/lshrdi3.S \
+    lib/i386/moddi3.S \
+    lib/i386/muldi3.S \
+    lib/i386/udivdi3.S \
+    lib/i386/umoddi3.S
+endif
+ifeq ($(TARGET_ARCH),mips)
+  LOCAL_SRC_FILES += dummy.s
 endif
 
 include $(LIBBCC_ROOT_PATH)/libbcc-build-rules.mk

@@ -69,6 +69,7 @@
 #include "llvm/Module.h"
 #include "llvm/PassManager.h"
 #include "llvm/Value.h"
+#include "llvm/ExecutionEngine/ExecutionEngine.h"
 
 #include <errno.h>
 #include <sys/file.h>
@@ -82,6 +83,10 @@
 #include <iterator>
 #include <string>
 #include <vector>
+
+extern "C" void LLVMInitializeMipsTargetMC();
+extern "C" void LLVMInitializeMipsTargetInfo();
+extern "C" void LLVMInitializeMipsTarget();
 
 namespace bcc {
 
@@ -167,6 +172,13 @@ void Compiler::GlobalInitialization() {
   LLVMInitializeX86Target();
 #endif
 
+#if defined(PROVIDE_MIPS_CODEGEN)
+//  LLVMInitializeMipsAsmPrinter();
+  LLVMInitializeMipsTargetMC();
+  LLVMInitializeMipsTargetInfo();
+  LLVMInitializeMipsTarget();
+#endif
+
 #if USE_DISASSEMBLER
   InitializeDisassembler();
 #endif
@@ -199,10 +211,15 @@ void Compiler::GlobalInitialization() {
   // Register allocation policy:
   //  createFastRegisterAllocator: fast but bad quality
   //  createLinearScanRegisterAllocator: not so fast but good quality
+#if defined(FORCE_MIPS_CODEGEN)
+// PJ - MIPS - force FastRegisterAllocator
+llvm::RegisterRegAlloc::setDefault (llvm::createFastRegisterAllocator);
+#else
   llvm::RegisterRegAlloc::setDefault
     ((CodeGenOptLevel == llvm::CodeGenOpt::None) ?
      llvm::createFastRegisterAllocator :
      llvm::createLinearScanRegisterAllocator);
+#endif
 
 #if USE_CACHE
   // Read in SHA1 checksum of libbcc and libRS.
@@ -664,7 +681,7 @@ int Compiler::runMCCodeGen(llvm::TargetData *TD, llvm::TargetMachine *TM) {
   // Add MC code generation passes to pass manager
   llvm::MCContext *Ctx;
   if (TM->addPassesToEmitMC(MCCodeGenPasses, Ctx, OutSVOS,
-                            CodeGenOptLevel, false)) {
+                            /*CodeGenOptLevel, */false)) {
     setError("Fail to add passes to emit file");
     return 1;
   }
