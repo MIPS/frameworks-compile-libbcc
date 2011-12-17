@@ -84,6 +84,7 @@
 #include <string>
 #include <vector>
 
+extern "C" void LLVMInitializeMipsAsmPrinter();
 extern "C" void LLVMInitializeMipsTargetMC();
 extern "C" void LLVMInitializeMipsTargetInfo();
 extern "C" void LLVMInitializeMipsTarget();
@@ -173,7 +174,7 @@ void Compiler::GlobalInitialization() {
 #endif
 
 #if defined(PROVIDE_MIPS_CODEGEN)
-//  LLVMInitializeMipsAsmPrinter();
+  LLVMInitializeMipsAsmPrinter();
   LLVMInitializeMipsTargetMC();
   LLVMInitializeMipsTargetInfo();
   LLVMInitializeMipsTarget();
@@ -211,15 +212,15 @@ void Compiler::GlobalInitialization() {
   // Register allocation policy:
   //  createFastRegisterAllocator: fast but bad quality
   //  createLinearScanRegisterAllocator: not so fast but good quality
-#if defined(FORCE_MIPS_CODEGEN)
-// PJ - MIPS - force FastRegisterAllocator
-llvm::RegisterRegAlloc::setDefault (llvm::createFastRegisterAllocator);
-#else
   llvm::RegisterRegAlloc::setDefault
     ((CodeGenOptLevel == llvm::CodeGenOpt::None) ?
      llvm::createFastRegisterAllocator :
-     llvm::createLinearScanRegisterAllocator);
+#if defined(PROVIDE_MIPS_CODEGEN)
+	 llvm::createGreedyRegisterAllocator
+#else
+     llvm::createLinearScanRegisterAllocator
 #endif
+	 );
 
 #if USE_CACHE
   // Read in SHA1 checksum of libbcc and libRS.
