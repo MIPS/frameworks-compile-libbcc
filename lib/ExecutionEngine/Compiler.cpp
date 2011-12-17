@@ -682,7 +682,7 @@ int Compiler::runMCCodeGen(llvm::TargetData *TD, llvm::TargetMachine *TM) {
   // Add MC code generation passes to pass manager
   llvm::MCContext *Ctx;
   if (TM->addPassesToEmitMC(MCCodeGenPasses, Ctx, OutSVOS,
-                            /*CodeGenOptLevel, */false)) {
+                            CodeGenOptLevel, false)) {
     setError("Fail to add passes to emit file");
     return 1;
   }
