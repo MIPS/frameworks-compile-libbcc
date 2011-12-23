@@ -218,7 +218,9 @@ void Compiler::GlobalInitialization() {
 #if defined(PROVIDE_MIPS_CODEGEN)
 	 llvm::createGreedyRegisterAllocator
 #else
-     llvm::createLinearScanRegisterAllocator
+	 llvm::createGreedyRegisterAllocator
+	 /* Linear scan is no longer defined in the latest */
+//     llvm::createLinearScanRegisterAllocator
 #endif
 	 );
 
@@ -682,7 +684,7 @@ int Compiler::runMCCodeGen(llvm::TargetData *TD, llvm::TargetMachine *TM) {
   // Add MC code generation passes to pass manager
   llvm::MCContext *Ctx;
   if (TM->addPassesToEmitMC(MCCodeGenPasses, Ctx, OutSVOS,
-                            CodeGenOptLevel, false)) {
+                            /*CodeGenOptLevel,*/ false)) {
     setError("Fail to add passes to emit file");
     return 1;
   }
