@@ -103,11 +103,7 @@ bool BitcodeTranslator::translate() {
 
   // Module ownership is handled by the context, so we don't need to free it.
   llvm::Module *module =
-#if defined(PROVIDE_MIPS_CODEGEN)
-	  NULL;
-#else
       llvm_2_7::ParseBitcodeFile(MEM.get(), *mContext, &error);
-#endif
   if (!module) {
     LOGE("Could not parse bitcode file");
     LOGE("%s", error.c_str());

@@ -42,10 +42,7 @@ libbcinfo_STATIC_LIBRARIES := \
   libLLVMBitWriter \
   libLLVMCore \
   libLLVMSupport \
-
-ifneq ($(TARGET_ARCH),mips)
-libbcinfo_STATIC_LIBRARIES += libLLVMBitReader_2_7
-endif
+  libLLVMBitReader_2_7
 
 LLVM_ROOT_PATH := external/llvm
 

@@ -7,8 +7,6 @@ bitcode_reader_2_7_SRC_FILES := \
 	BitReader.cpp \
 	BitcodeReader.cpp
 
-ifneq ($(TARGET_ARCH),mips)
-
 # For the host
 # =====================================================
 include $(CLEAR_VARS)
@@ -36,5 +34,3 @@ LOCAL_MODULE_TAGS := optional
 include $(LLVM_DEVICE_BUILD_MK)
 include $(LLVM_GEN_INTRINSICS_MK)
 include $(BUILD_STATIC_LIBRARY)
-
-endif
