@@ -32,8 +32,8 @@
 #include "llvm/Target/TargetData.h"
 #include "llvm/Target/TargetMachine.h"
 #include "llvm/Target/TargetOptions.h"
-#include "llvm/Target/TargetRegistry.h"
-#include "llvm/Target/TargetSelect.h"
+#include "llvm/Support/TargetRegistry.h"
+#include "llvm/Support/TargetSelect.h"
 
 #include "llvm/LLVMContext.h"
 

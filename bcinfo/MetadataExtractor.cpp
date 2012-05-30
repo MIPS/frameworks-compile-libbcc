@@ -16,14 +16,11 @@
 
 #include "bcinfo/MetadataExtractor.h"
 
-#include "bcinfo/BitcodeWrapper.h"
-
 #define LOG_TAG "bcinfo"
 #include <cutils/log.h>
 
 #include "llvm/ADT/OwningPtr.h"
 #include "llvm/Bitcode/ReaderWriter.h"
-#include "llvm/Constants.h"
 #include "llvm/LLVMContext.h"
 #include "llvm/Module.h"
 #include "llvm/Support/MemoryBuffer.h"
@@ -58,9 +55,6 @@ MetadataExtractor::MetadataExtractor(const char *bitcode, size_t bitcodeSize)
       mExportFuncCount(0), mExportForEachSignatureCount(0),
       mExportForEachSignatureList(NULL), mPragmaCount(0), mPragmaKeyList(NULL),
       mPragmaValueList(NULL), mObjectSlotCount(0), mObjectSlotList(NULL) {
-  BitcodeWrapper wrapper(bitcode, bitcodeSize);
-  mCompilerVersion = wrapper.getCompilerVersion();
-  mOptimizationLevel = wrapper.getOptimizationLevel();
 }
 
 
@@ -247,7 +241,6 @@ bool MetadataExtractor::extract() {
       module->getNamedMetadata(PragmaMetadataName);
   const llvm::NamedMDNode *ObjectSlotMetadata =
       module->getNamedMetadata(ObjectSlotMetadataName);
-
 
   if (ExportVarMetadata) {
     mExportVarCount = ExportVarMetadata->getNumOperands();

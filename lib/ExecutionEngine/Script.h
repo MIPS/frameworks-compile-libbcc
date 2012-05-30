@@ -29,7 +29,6 @@
 
 namespace llvm {
   class Module;
-  class GDBJITRegistrar;
 }
 
 namespace bcc {
@@ -80,14 +79,10 @@ namespace bcc {
     BCCSymbolLookupFn mpExtSymbolLookupFn;
     void *mpExtSymbolLookupFnContext;
 
-    uint32_t mCompilerVersion;
-    uint32_t mOptimizationLevel;
-
   public:
     Script() : mErrorCode(BCC_NO_ERROR), mStatus(ScriptStatus::Unknown),
                mIsContextSlotNotAvail(false),
-               mpExtSymbolLookupFn(NULL), mpExtSymbolLookupFnContext(NULL),
-               mCompilerVersion(0), mOptimizationLevel(3) {
+               mpExtSymbolLookupFn(NULL), mpExtSymbolLookupFnContext(NULL) {
       Compiler::GlobalInitialization();
 
       mSourceList[0] = NULL;
@@ -130,13 +125,6 @@ namespace bcc {
 
     void *lookup(const char *name);
 
-    uint32_t getCompilerVersion() const {
-      return mCompilerVersion;
-    }
-
-    uint32_t getOptimizationLevel() const {
-      return mOptimizationLevel;
-    }
 
     size_t getExportVarCount() const;
 
@@ -192,6 +180,7 @@ namespace bcc {
     int internalLoadCache(bool checkOnly);
 #endif
     int internalCompile(bool compileOnly);
+
   };
 
 } // namespace bcc

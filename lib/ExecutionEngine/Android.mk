@@ -25,8 +25,6 @@ include $(LOCAL_PATH)/../../libbcc-config.mk
 libbcc_executionengine_SRC_FILES := \
   Compiler.cpp \
   FileHandle.cpp \
-  GDBJIT.cpp \
-  GDBJITRegistrar.cpp \
   Runtime.c \
   RuntimeStub.c \
   Script.cpp \
@@ -72,7 +70,6 @@ LOCAL_CFLAGS += -DTARGET_BUILD
 
 LOCAL_C_INCLUDES := $(libbcc_C_INCLUDES)
 LOCAL_SRC_FILES := $(libbcc_executionengine_SRC_FILES)
-LOCAL_SHARED_LIBRARIES := libbcinfo
 
 include $(LIBBCC_ROOT_PATH)/libbcc-gen-config-from-mk.mk
 include $(LIBBCC_ROOT_PATH)/libbcc-build-rules.mk
@@ -95,7 +92,6 @@ LOCAL_CFLAGS += $(libbcc_CFLAGS)
 LOCAL_C_INCLUDES := $(libbcc_C_INCLUDES)
 
 LOCAL_SRC_FILES := $(libbcc_executionengine_SRC_FILES)
-LOCAL_SHARED_LIBRARIES := libbcinfo
 
 include $(LIBBCC_ROOT_PATH)/libbcc-gen-config-from-mk.mk
 include $(LIBBCC_ROOT_PATH)/libbcc-build-rules.mk

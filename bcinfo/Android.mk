@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2012 The Android Open Source Project
+# Copyright (C) 2011 The Android Open Source Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -38,7 +38,6 @@ libbcinfo_SRC_FILES := \
 
 libbcinfo_C_INCLUDES := $(LOCAL_PATH)/../include
 libbcinfo_STATIC_LIBRARIES := \
-  libLLVMWrap \
   libLLVMBitReader \
   libLLVMBitWriter \
   libLLVMCore \
@@ -58,6 +57,10 @@ LOCAL_SRC_FILES := $(libbcinfo_SRC_FILES)
 
 LOCAL_CFLAGS += $(local_cflags_for_libbcinfo)
 
+ifeq ($(TARGET_ARCH),mips)
+  LOCAL_CFLAGS += -DPROVIDE_MIPS_CODEGEN
+endif
+
 LOCAL_C_INCLUDES := $(libbcinfo_C_INCLUDES)
 
 LOCAL_STATIC_LIBRARIES := $(libbcinfo_STATIC_LIBRARIES)
@@ -76,6 +79,10 @@ LOCAL_IS_HOST_MODULE := true
 LOCAL_SRC_FILES := $(libbcinfo_SRC_FILES)
 
 LOCAL_CFLAGS += $(local_cflags_for_libbcinfo)
+
+ifeq ($(TARGET_ARCH),mips)
+  LOCAL_CFLAGS += -DPROVIDE_MIPS_CODEGEN
+endif
 
 LOCAL_C_INCLUDES := $(libbcinfo_C_INCLUDES)
 

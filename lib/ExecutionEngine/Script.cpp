@@ -17,7 +17,6 @@
 #include "Script.h"
 
 #include "Config.h"
-#include "bcinfo/BitcodeWrapper.h"
 
 #if USE_OLD_JIT
 #include "OldJIT/CacheReader.h"
@@ -33,7 +32,6 @@
 
 #include "DebugHelper.h"
 #include "FileHandle.h"
-#include "GDBJITRegistrar.h"
 #include "ScriptCompiled.h"
 #include "ScriptCached.h"
 #include "Sha1Helper.h"
@@ -42,11 +40,11 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <unistd.h>
 
 #include <new>
 #include <string.h>
 #include <cutils/properties.h>
+
 
 namespace {
 
@@ -105,10 +103,6 @@ int Script::addSourceBC(size_t idx,
     LOGE("Invalid argument: bitcode = NULL\n");
     return 1;
   }
-
-  bcinfo::BitcodeWrapper wrapper(bitcode, bitcodeSize);
-  mCompilerVersion = wrapper.getCompilerVersion();
-  mOptimizationLevel = wrapper.getOptimizationLevel();
 
   mSourceList[idx] = SourceInfo::createFromBuffer(resName,
                                                   bitcode, bitcodeSize,
@@ -220,7 +214,6 @@ int Script::prepareExecutable(char const *cacheDir,
     return 1;
   }
 
-  int status = -1;
 #if USE_CACHE
   if (cacheDir && cacheName) {
     // Set Cache Directory and File Name
@@ -233,24 +226,18 @@ int Script::prepareExecutable(char const *cacheDir,
 
     // Load Cache File
     if (internalLoadCache(false) == 0) {
-      status = 0;
+      return 0;
     }
   }
 #endif
 
-  if (status == -1) {
-    status = internalCompile(false);
-    if (status != 0) {
-      LOGE("LLVM error message: %s\n", getCompilerErrorMessage());
-    }
-  }
-
-  // FIXME: Registration can be conditional on the presence of debug metadata
-  if (status == 0) {
-    registerObjectWithGDB(getELF(), getELFSize()); // thread-safe registration
+  int status = internalCompile(false);
+  if (status != 0) {
+    LOGE("LLVM error message: %s\n", getCompilerErrorMessage());
   }
   return status;
 }
+
 
 #if USE_CACHE
 int Script::internalLoadCache(bool checkOnly) {
@@ -774,11 +761,7 @@ size_t Script::getELFSize() const {
     case ScriptStatus::Compiled: {
       return mCompiled->getELFSize();
     }
-#if USE_CACHE
-    case ScriptStatus::Cached: {
-      return mCached->getELFSize();
-    }
-#endif
+
     default: {
       return 0;
     }
@@ -790,11 +773,7 @@ const char *Script::getELF() const {
     case ScriptStatus::Compiled: {
       return mCompiled->getELF();
     }
-#if USE_CACHE
-    case ScriptStatus::Cached: {
-      return mCached->getELF();
-    }
-#endif
+
     default: {
       return NULL;
     }

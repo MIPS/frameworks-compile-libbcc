@@ -46,7 +46,6 @@
 #include "llvm/CodeGen/RegAllocRegistry.h"
 #include "llvm/CodeGen/SchedulerRegistry.h"
 
-#include "llvm/MC/MCContext.h"
 #include "llvm/MC/SubtargetFeature.h"
 
 #include "llvm/Transforms/IPO.h"
@@ -61,17 +60,16 @@
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/TargetRegistry.h"
 #include "llvm/Support/TargetSelect.h"
-#include "llvm/Support/raw_ostream.h"
 
-#include "llvm/Constants.h"
+#include "llvm/Type.h"
 #include "llvm/GlobalValue.h"
 #include "llvm/Linker.h"
 #include "llvm/LLVMContext.h"
 #include "llvm/Metadata.h"
 #include "llvm/Module.h"
 #include "llvm/PassManager.h"
-#include "llvm/Type.h"
 #include "llvm/Value.h"
+#include "llvm/ExecutionEngine/ExecutionEngine.h"
 
 #include <errno.h>
 #include <sys/file.h>
@@ -86,7 +84,10 @@
 #include <string>
 #include <vector>
 
-extern char* gDebugDumpDirectory;
+extern "C" void LLVMInitializeMipsAsmPrinter();
+extern "C" void LLVMInitializeMipsTargetMC();
+extern "C" void LLVMInitializeMipsTargetInfo();
+extern "C" void LLVMInitializeMipsTarget();
 
 namespace bcc {
 
@@ -120,7 +121,6 @@ const llvm::StringRef Compiler::ExportFuncMetadataName = "#rs_export_func";
 // Name of metadata node where RS object slot info resides (should be
 // synced with slang_rs_metadata.h)
 const llvm::StringRef Compiler::ObjectSlotMetadataName = "#rs_object_slots";
-
 
 //////////////////////////////////////////////////////////////////////////////
 // Compiler
@@ -173,9 +173,23 @@ void Compiler::GlobalInitialization() {
   LLVMInitializeX86Target();
 #endif
 
+#if defined(PROVIDE_MIPS_CODEGEN)
+  LLVMInitializeMipsAsmPrinter();
+  LLVMInitializeMipsTargetMC();
+  LLVMInitializeMipsTargetInfo();
+  LLVMInitializeMipsTarget();
+#endif
+
 #if USE_DISASSEMBLER
   InitializeDisassembler();
 #endif
+
+  // -O0: llvm::CodeGenOpt::None
+  // -O1: llvm::CodeGenOpt::Less
+  // -O2: llvm::CodeGenOpt::Default
+  // -O3: llvm::CodeGenOpt::Aggressive
+  CodeGenOptLevel = llvm::CodeGenOpt::Aggressive;
+
   // Below are the global settings to LLVM
 
   // Disable frame pointer elimination optimization
@@ -194,6 +208,21 @@ void Compiler::GlobalInitialization() {
 
   // Register the scheduler
   llvm::RegisterScheduler::setDefault(llvm::createDefaultScheduler);
+
+  // Register allocation policy:
+  //  createFastRegisterAllocator: fast but bad quality
+  //  createLinearScanRegisterAllocator: not so fast but good quality
+  llvm::RegisterRegAlloc::setDefault
+    ((CodeGenOptLevel == llvm::CodeGenOpt::None) ?
+     llvm::createFastRegisterAllocator :
+#if defined(PROVIDE_MIPS_CODEGEN)
+	 llvm::createGreedyRegisterAllocator
+#else
+	 llvm::createGreedyRegisterAllocator
+	 /* Linear scan is no longer defined in the latest */
+//     llvm::createLinearScanRegisterAllocator
+#endif
+	 );
 
 #if USE_CACHE
   // Read in SHA1 checksum of libbcc and libRS.
@@ -279,37 +308,13 @@ int Compiler::compile(bool compileOnly) {
 
   std::string FeaturesStr;
 
-  if (mModule == NULL)  // No module was loaded
-    return 0;
-
   llvm::NamedMDNode const *PragmaMetadata;
   llvm::NamedMDNode const *ExportVarMetadata;
   llvm::NamedMDNode const *ExportFuncMetadata;
   llvm::NamedMDNode const *ObjectSlotMetadata;
 
-  uint32_t OptimizationLevel = mpResult->getOptimizationLevel();
-
-  if (OptimizationLevel == 0) {
-    CodeGenOptLevel = llvm::CodeGenOpt::None;
-  } else if (OptimizationLevel == 1) {
-    CodeGenOptLevel = llvm::CodeGenOpt::Less;
-  } else if (OptimizationLevel == 2) {
-    CodeGenOptLevel = llvm::CodeGenOpt::Default;
-  } else if (OptimizationLevel == 3) {
-    CodeGenOptLevel = llvm::CodeGenOpt::Aggressive;
-  }
-
-  // not the best place for this, but we need to set the register allocation
-  // policy after we read the optimization_level metadata from the bitcode
-
-  // Register allocation policy:
-  //  createFastRegisterAllocator: fast but bad quality
-  //  createLinearScanRegisterAllocator: not so fast but good quality
-  llvm::RegisterRegAlloc::setDefault
-    ((CodeGenOptLevel == llvm::CodeGenOpt::None) ?
-     llvm::createFastRegisterAllocator :
-     llvm::createLinearScanRegisterAllocator);
-
+  if (mModule == NULL)  // No module was loaded
+    return 0;
 
   // Create TargetMachine
   Target = llvm::TargetRegistry::lookupTarget(Triple, mError);
@@ -356,8 +361,7 @@ int Compiler::compile(bool compileOnly) {
 
   // Perform link-time optimization if we have multiple modules
   if (mHasLinked) {
-    runLTO(new llvm::TargetData(*TD), ExportVarMetadata, ExportFuncMetadata,
-      CodeGenOptLevel);
+    runLTO(new llvm::TargetData(*TD), ExportVarMetadata, ExportFuncMetadata);
   }
 
   // Perform code generation
@@ -386,9 +390,6 @@ int Compiler::compile(bool compileOnly) {
     setError("Fail to load emitted ELF relocatable file");
     goto on_bcc_compile_error;
   }
-
-  rsloaderUpdateSectionHeaders(mRSExecutable,
-    (unsigned char*) mEmittedELFExecutable.begin());
 
   if (ExportVarMetadata) {
     ScriptCompiled::ExportVarList &varList = mpResult->mExportVars;
@@ -681,9 +682,9 @@ int Compiler::runMCCodeGen(llvm::TargetData *TD, llvm::TargetMachine *TM) {
   MCCodeGenPasses.add(TD);
 
   // Add MC code generation passes to pass manager
-  llvm::MCContext *Ctx = NULL;
+  llvm::MCContext *Ctx;
   if (TM->addPassesToEmitMC(MCCodeGenPasses, Ctx, OutSVOS,
-                            CodeGenOptLevel, false)) {
+                            /*CodeGenOptLevel,*/ false)) {
     setError("Fail to add passes to emit file");
     return 1;
   }
@@ -697,8 +698,12 @@ int Compiler::runMCCodeGen(llvm::TargetData *TD, llvm::TargetMachine *TM) {
 
 int Compiler::runLTO(llvm::TargetData *TD,
                      llvm::NamedMDNode const *ExportVarMetadata,
-                     llvm::NamedMDNode const *ExportFuncMetadata,
-                     llvm::CodeGenOpt::Level OptimizationLevel) {
+                     llvm::NamedMDNode const *ExportFuncMetadata) {
+  llvm::PassManager LTOPasses;
+
+  // Add TargetData to LTO passes
+  LTOPasses.add(TD);
+
   // Collect All Exported Symbols
   std::vector<const char*> ExportSymbols;
 
@@ -748,110 +753,84 @@ int Compiler::runLTO(llvm::TargetData *TD,
             UserDefinedExternalSymbols.end(),
             std::back_inserter(ExportSymbols));
 
-  llvm::PassManager LTOPasses;
-
-  // Add TargetData to LTO passes
-  LTOPasses.add(TD);
-
   // We now create passes list performing LTO. These are copied from
   // (including comments) llvm::createStandardLTOPasses().
-  // Only a subset of these LTO passes are enabled in optimization level 0
-  // as they interfere with interactive debugging.
-  // FIXME: figure out which passes (if any) makes sense for levels 1 and 2
 
-  if (OptimizationLevel != llvm::CodeGenOpt::None) {
-    // Internalize all other symbols not listed in ExportSymbols
-    LTOPasses.add(llvm::createInternalizePass(ExportSymbols));
+  // Internalize all other symbols not listed in ExportSymbols
+  LTOPasses.add(llvm::createInternalizePass(ExportSymbols));
 
-    // Propagate constants at call sites into the functions they call. This
-    // opens opportunities for globalopt (and inlining) by substituting
-    // function pointers passed as arguments to direct uses of functions.
-    LTOPasses.add(llvm::createIPSCCPPass());
+  // Propagate constants at call sites into the functions they call. This
+  // opens opportunities for globalopt (and inlining) by substituting
+  // function pointers passed as arguments to direct uses of functions.
+  LTOPasses.add(llvm::createIPSCCPPass());
 
-    // Now that we internalized some globals, see if we can hack on them!
-    LTOPasses.add(llvm::createGlobalOptimizerPass());
+  // Now that we internalized some globals, see if we can hack on them!
+  LTOPasses.add(llvm::createGlobalOptimizerPass());
 
-    // Linking modules together can lead to duplicated global constants, only
-    // keep one copy of each constant...
-    LTOPasses.add(llvm::createConstantMergePass());
+  // Linking modules together can lead to duplicated global constants, only
+  // keep one copy of each constant...
+  LTOPasses.add(llvm::createConstantMergePass());
 
-    // Remove unused arguments from functions...
-    LTOPasses.add(llvm::createDeadArgEliminationPass());
+  // Remove unused arguments from functions...
+  LTOPasses.add(llvm::createDeadArgEliminationPass());
 
-    // Reduce the code after globalopt and ipsccp. Both can open up
-    // significant simplification opportunities, and both can propagate
-    // functions through function pointers. When this happens, we often have
-    // to resolve varargs calls, etc, so let instcombine do this.
-    LTOPasses.add(llvm::createInstructionCombiningPass());
+  // Reduce the code after globalopt and ipsccp. Both can open up
+  // significant simplification opportunities, and both can propagate
+  // functions through function pointers. When this happens, we often have
+  // to resolve varargs calls, etc, so let instcombine do this.
+  LTOPasses.add(llvm::createInstructionCombiningPass());
 
-    // Inline small functions
-    LTOPasses.add(llvm::createFunctionInliningPass());
+  // Inline small functions
+  LTOPasses.add(llvm::createFunctionInliningPass());
 
-    // Remove dead EH info.
-    LTOPasses.add(llvm::createPruneEHPass());
+  // Remove dead EH info.
+  LTOPasses.add(llvm::createPruneEHPass());
 
-    // Internalize the globals again after inlining
-    LTOPasses.add(llvm::createGlobalOptimizerPass());
+  // Internalize the globals again after inlining
+  LTOPasses.add(llvm::createGlobalOptimizerPass());
 
-    // Remove dead functions.
-    LTOPasses.add(llvm::createGlobalDCEPass());
+  // Remove dead functions.
+  LTOPasses.add(llvm::createGlobalDCEPass());
 
-    // If we didn't decide to inline a function, check to see if we can
-    // transform it to pass arguments by value instead of by reference.
-    LTOPasses.add(llvm::createArgumentPromotionPass());
+  // If we didn't decide to inline a function, check to see if we can
+  // transform it to pass arguments by value instead of by reference.
+  LTOPasses.add(llvm::createArgumentPromotionPass());
 
-    // The IPO passes may leave cruft around.  Clean up after them.
-    LTOPasses.add(llvm::createInstructionCombiningPass());
-    LTOPasses.add(llvm::createJumpThreadingPass());
+  // The IPO passes may leave cruft around.  Clean up after them.
+  LTOPasses.add(llvm::createInstructionCombiningPass());
+  LTOPasses.add(llvm::createJumpThreadingPass());
 
-    // Break up allocas
-    LTOPasses.add(llvm::createScalarReplAggregatesPass());
+  // Break up allocas
+  LTOPasses.add(llvm::createScalarReplAggregatesPass());
 
-    // Run a few AA driven optimizations here and now, to cleanup the code.
-    LTOPasses.add(llvm::createFunctionAttrsPass());  // Add nocapture.
-    LTOPasses.add(llvm::createGlobalsModRefPass());  // IP alias analysis.
+  // Run a few AA driven optimizations here and now, to cleanup the code.
+  LTOPasses.add(llvm::createFunctionAttrsPass());  // Add nocapture.
+  LTOPasses.add(llvm::createGlobalsModRefPass());  // IP alias analysis.
 
-    // Hoist loop invariants.
-    LTOPasses.add(llvm::createLICMPass());
+  // Hoist loop invariants.
+  LTOPasses.add(llvm::createLICMPass());
 
-    // Remove redundancies.
-    LTOPasses.add(llvm::createGVNPass());
+  // Remove redundancies.
+  LTOPasses.add(llvm::createGVNPass());
 
-    // Remove dead memcpys.
-    LTOPasses.add(llvm::createMemCpyOptPass());
+  // Remove dead memcpys.
+  LTOPasses.add(llvm::createMemCpyOptPass());
 
-    // Nuke dead stores.
-    LTOPasses.add(llvm::createDeadStoreEliminationPass());
+  // Nuke dead stores.
+  LTOPasses.add(llvm::createDeadStoreEliminationPass());
 
-    // Cleanup and simplify the code after the scalar optimizations.
-    LTOPasses.add(llvm::createInstructionCombiningPass());
+  // Cleanup and simplify the code after the scalar optimizations.
+  LTOPasses.add(llvm::createInstructionCombiningPass());
 
-    LTOPasses.add(llvm::createJumpThreadingPass());
+  LTOPasses.add(llvm::createJumpThreadingPass());
 
-    // Delete basic blocks, which optimization passes may have killed.
-    LTOPasses.add(llvm::createCFGSimplificationPass());
+  // Delete basic blocks, which optimization passes may have killed.
+  LTOPasses.add(llvm::createCFGSimplificationPass());
 
-    // Now that we have optimized the program, discard unreachable functions.
-    LTOPasses.add(llvm::createGlobalDCEPass());
-
-  } else {
-    LTOPasses.add(llvm::createInternalizePass(ExportSymbols));
-    LTOPasses.add(llvm::createGlobalOptimizerPass());
-    LTOPasses.add(llvm::createConstantMergePass());
-  }
+  // Now that we have optimized the program, discard unreachable functions.
+  LTOPasses.add(llvm::createGlobalDCEPass());
 
   LTOPasses.run(*mModule);
-
-#if ANDROID_ENGINEERING_BUILD
-  if (0 != gDebugDumpDirectory) {
-    std::string errs;
-    std::string Filename(gDebugDumpDirectory);
-    Filename += "/post-lto-module.ll";
-    llvm::raw_fd_ostream FS(Filename.c_str(), errs);
-    mModule->print(FS, 0);
-    FS.close();
-  }
-#endif
 
   return 0;
 }

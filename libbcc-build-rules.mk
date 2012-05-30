@@ -40,7 +40,11 @@ ifeq ($(LOCAL_IS_HOST_MODULE),) # Target Build
     ifeq ($(TARGET_ARCH),x86)
       LOCAL_CFLAGS += -DFORCE_X86_CODEGEN
     else
-      $(error Unsupported architecture $(TARGET_ARCH))
+      ifeq ($(TARGET_ARCH),mips)
+        LOCAL_CFLAGS += -DFORCE_MIPS_CODEGEN
+      else
+        $(error Unsupported architecture $(TARGET_ARCH))
+      endif
     endif
   endif
 

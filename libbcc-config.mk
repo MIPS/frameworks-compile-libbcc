@@ -60,6 +60,10 @@ else
 libbcc_USE_DISASSEMBLER := 1
 endif
 
+ifeq ($(TARGET_ARCH),mips)
+  libbcc_USE_DISASSEMBLER := 0
+endif
+
 
 #=====================================================================
 # Common Variables
@@ -68,8 +72,6 @@ endif
 libbcc_CFLAGS := -Wall -Wno-unused-parameter -Werror
 ifneq ($(TARGET_BUILD_VARIANT),eng)
 libbcc_CFLAGS += -D__DISABLE_ASSERTS
-else
-libbcc_CFLAGS += -DANDROID_ENGINEERING_BUILD
 endif
 
 # Include File Search Path

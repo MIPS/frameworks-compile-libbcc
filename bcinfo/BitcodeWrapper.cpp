@@ -1,5 +1,5 @@
 /*
- * Copyright 2011-2012, The Android Open Source Project
+ * Copyright 2011, The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  */
 
 #include "bcinfo/BitcodeWrapper.h"
-#include "bcinfo/Wrap/bitcode_wrapperer.h"
-#include "bcinfo/Wrap/in_memory_wrapper_input.h"
 
 #define LOG_TAG "bcinfo"
 #include <cutils/log.h>
@@ -30,20 +28,8 @@ namespace bcinfo {
 
 BitcodeWrapper::BitcodeWrapper(const char *bitcode, size_t bitcodeSize)
     : mFileType(BC_NOT_BC), mBitcode(bitcode),
-      mBitcodeEnd(bitcode + bitcodeSize - 1), mBitcodeSize(bitcodeSize),
-      mHeaderVersion(0), mTargetAPI(0), mCompilerVersion(0),
-      mOptimizationLevel(3) {
-  InMemoryWrapperInput inMem(mBitcode, mBitcodeSize);
-  BitcodeWrapperer wrapperer(&inMem, NULL);
-  if (wrapperer.IsInputBitcodeWrapper()) {
-    mFileType = BC_WRAPPER;
-    mHeaderVersion = wrapperer.getAndroidHeaderVersion();
-    mTargetAPI = wrapperer.getAndroidTargetAPI();
-    mCompilerVersion = wrapperer.getAndroidCompilerVersion();
-    mOptimizationLevel = wrapperer.getAndroidOptimizationLevel();
-  } else if (wrapperer.IsInputBitcodeFile()) {
-    mFileType = BC_RAW;
-  }
+      mBitcodeEnd(bitcode + bitcodeSize - 1), mBitcodeSize(bitcodeSize) {
+  memset(&mBCHeader, 0, sizeof(mBCHeader));
 }
 
 
@@ -53,7 +39,30 @@ BitcodeWrapper::~BitcodeWrapper() {
 
 
 bool BitcodeWrapper::unwrap() {
-  return mFileType != BC_NOT_BC;
+  if (!mBitcode || !mBitcodeSize) {
+    LOGE("Invalid/empty bitcode");
+    return false;
+  }
+
+  if (llvm::isBitcodeWrapper((const unsigned char*) mBitcode,
+                             (const unsigned char*) mBitcodeEnd)) {
+    if (mBitcodeSize < sizeof(mBCHeader)) {
+      LOGE("Invalid bitcode size");
+      return false;
+    }
+
+    mFileType = BC_WRAPPER;
+    memcpy(&mBCHeader, mBitcode, sizeof(mBCHeader));
+    return true;
+  } else if (llvm::isRawBitcode((const unsigned char*) mBitcode,
+                                (const unsigned char*) mBitcodeEnd)) {
+    mFileType = BC_RAW;
+    return true;
+  } else {
+    LOGE("Not bitcode");
+    mFileType = BC_NOT_BC;
+    return false;
+  }
 }
 
 }  // namespace bcinfo
