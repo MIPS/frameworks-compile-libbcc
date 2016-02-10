@@ -55,15 +55,35 @@ namespace {
 
 static const bool gEnableRsTbaa = true;
 
-/* RSKernelExpandPass - This pass operates on functions that are able
- * to be called via rsForEach(), "foreach_<NAME>", or
- * "reduce_<NAME>". We create an inner loop for the function to be
- * invoked over the appropriate data cells of the input/output
- * allocations (adjusting other relevant parameters as we go). We
- * support doing this for any forEach or reduce style compute
- * kernels. The new function name is the original function name
- * followed by ".expand". Note that we still generate code for the
- * original function.
+/* RSKernelExpandPass
+ *
+ * This pass generates functions used to implement calls via
+ * rsForEach(), "foreach_<NAME>", or "reduce_<NAME>". We create an
+ * inner loop for the function to be invoked over the appropriate data
+ * cells of the input/output allocations (adjusting other relevant
+ * parameters as we go). We support doing this for any forEach or
+ * reduce style compute kernels.
+ *
+ * In the case of a foreach kernel or a simple reduction kernel, the
+ * new function name is the original function name "<NAME>" followed
+ * by ".expand" -- "<NAME>.expand".
+ *
+ * In the case of a general reduction kernel, the kernel's accumulator
+ * function is the one transformed, and the new function name is the
+ * original accumulator function name "<ACCUMFN>" followed by
+ * ".expand" -- "<ACCUMFN>.expand". Using the name "<ACCUMFN>.expand"
+ * for the function generated from the accumulator should not
+ * introduce any possibility for name clashes today: The accumulator
+ * function <ACCUMFN> must be static, so it cannot also serve as a
+ * foreach kernel; and the code for <ACCUMFN>.expand depends only on
+ * <ACCUMFN>, not on any other properties of the reduction kernel, so
+ * any reduction kernels that share the accumulator <ACCUMFN> can
+ * share <ACCUMFN>.expand also.
+ *
+ * Note that this pass does not delete the original function <NAME> or
+ * <ACCUMFN>. However, if it is inlined into the newly-generated
+ * function and not otherwise referenced, then a subsequent pass may
+ * delete it.
  */
 class RSKernelExpandPass : public llvm::ModulePass {
 public:
