@@ -77,7 +77,7 @@ private:
                                     bool pDumpIR);
 
 public:
-  RSCompilerDriver(bool pUseCompilerRT = true);
+  RSCompilerDriver();
   ~RSCompilerDriver();
 
   Compiler *getCompiler() {
