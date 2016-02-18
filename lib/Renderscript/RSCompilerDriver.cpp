@@ -49,7 +49,7 @@
 
 using namespace bcc;
 
-RSCompilerDriver::RSCompilerDriver(bool pUseCompilerRT) :
+RSCompilerDriver::RSCompilerDriver() :
     mConfig(nullptr), mCompiler(), mDebugContext(false),
     mLinkRuntimeCallback(nullptr), mEnableGlobalMerge(true),
     mEmbedGlobalInfo(false), mEmbedGlobalInfoSkipConstant(false) {

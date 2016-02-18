@@ -262,7 +262,7 @@ int main(int argc, char **argv) {
   }
 
   BCCContext context;
-  RSCompilerDriver rscd(false);
+  RSCompilerDriver rscd;
   Compiler compiler;
 
   if (!ConfigCompiler(rscd)) {
