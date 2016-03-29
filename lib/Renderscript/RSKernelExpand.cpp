@@ -1585,6 +1585,7 @@ public:
 
     for (size_t i = 0; i < ExportReduceNewCount; ++i) {
       Changed |= PromoteReduceNewFunction(ExportReduceNewList[i].mInitializerName, PromotedFunctions);
+      Changed |= PromoteReduceNewFunction(ExportReduceNewList[i].mCombinerName, PromotedFunctions);
       Changed |= PromoteReduceNewFunction(ExportReduceNewList[i].mOutConverterName, PromotedFunctions);
 
       // Accumulator
