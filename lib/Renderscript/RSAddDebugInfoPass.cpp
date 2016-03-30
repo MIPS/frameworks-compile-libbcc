@@ -94,7 +94,7 @@ private:
     llvm::LLVMContext &ctx = Module.getContext();
 
     // Start generating debug information for bcc-generated code.
-    DebugInfo.createCompileUnit(llvm::dwarf::DW_LANG_C99,
+    DebugInfo.createCompileUnit(llvm::dwarf::DW_LANG_GOOGLE_RenderScript,
                                 DEBUG_GENERATED_FILE, DEBUG_SOURCE_PATH,
                                 "RS", false, "", 0);
 
