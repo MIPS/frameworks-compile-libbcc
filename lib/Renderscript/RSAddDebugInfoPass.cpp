@@ -175,6 +175,7 @@ private:
         sourceFileName, 1, kernelTypeMD,
         false, true, 1, 0, false
     );
+    Func.setSubprogram(ExpandedFunc);
 
     // IRBuilder for allocating variables for arguments.
     llvm::IRBuilder<> ir(&*Func.getEntryBlock().begin());
