@@ -98,7 +98,7 @@ private:
 public:
   static char ID;
 
-  RSGlobalInfoPass(bool pSkipConstants = false)
+  explicit RSGlobalInfoPass(bool pSkipConstants = false)
     : ModulePass (ID), mSkipConstants(pSkipConstants) {
   }
 

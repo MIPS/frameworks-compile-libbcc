@@ -345,7 +345,7 @@ class BitcodeReaderValueList {
   ResolveConstantsTy ResolveConstants;
   LLVMContext &Context;
 public:
-  BitcodeReaderValueList(LLVMContext &C) : Context(C) {}
+  explicit BitcodeReaderValueList(LLVMContext &C) : Context(C) {}
   ~BitcodeReaderValueList() {
     assert(ResolveConstants.empty() && "Constants not resolved?");
   }
@@ -397,7 +397,7 @@ class BitcodeReaderMDValueList {
 
   LLVMContext &Context;
 public:
-  BitcodeReaderMDValueList(LLVMContext &C)
+  explicit BitcodeReaderMDValueList(LLVMContext &C)
       : NumFwdRefs(0), AnyFwdRefs(false), Context(C) {}
 
   // vector compatibility methods
