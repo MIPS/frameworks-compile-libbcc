@@ -577,7 +577,7 @@ private:
   }
 
 public:
-  RSKernelExpandPass(bool pEnableStepOpt = true)
+  explicit RSKernelExpandPass(bool pEnableStepOpt = true)
       : ModulePass(ID), Module(nullptr), Context(nullptr),
         mEnableStepOpt(pEnableStepOpt) {
 
