@@ -238,6 +238,11 @@ bool CompilerConfig::initializeArch() {
     attributes.push_back("+sse4.2");
 #endif
 #endif // __HOST__
+
+    // LLVM generates AVX code that treats a long3 as 256 bits, while
+    // RenderScript considers a long3 192 bits (http://b/28879581)
+    attributes.push_back("-avx");
+
     break;
 #endif  // PROVIDE_X86_CODEGEN
 
@@ -264,6 +269,10 @@ bool CompilerConfig::initializeArch() {
     if (HasF16C())
       attributes.push_back("+f16c");
 #endif // __HOST__
+
+    // LLVM generates AVX code that treats a long3 as 256 bits, while
+    // RenderScript considers a long3 192 bits (http://b/28879581)
+    attributes.push_back("-avx");
 
     break;
 #endif  // PROVIDE_X86_CODEGEN
