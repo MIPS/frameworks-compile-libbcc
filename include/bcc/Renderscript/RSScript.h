@@ -69,7 +69,7 @@ private:
 public:
   static bool LinkRuntime(RSScript &pScript, const char *rt_path = nullptr);
 
-  RSScript(Source &pSource);
+  explicit RSScript(Source &pSource);
 
   // Passing in the CompilerConfig allows the optimization level to
   // be derived rather than defaulted to aggressive (-O3)

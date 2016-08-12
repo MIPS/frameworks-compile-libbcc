@@ -144,7 +144,7 @@ class MetadataExtractor {
    *
    * \param module - input module.
    */
-  MetadataExtractor(const llvm::Module *module);
+  explicit MetadataExtractor(const llvm::Module *module);
 
   ~MetadataExtractor();
 

@@ -27,7 +27,7 @@
 // Define a class to wrap named files. */
 class FileWrapperOutput : public WrapperOutput {
  public:
-  FileWrapperOutput(const char* name);
+  explicit FileWrapperOutput(const char* name);
   ~FileWrapperOutput();
   // Writes a single byte, returning false if unable to write.
   virtual bool Write(uint8_t byte);

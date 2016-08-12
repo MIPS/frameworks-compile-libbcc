@@ -117,7 +117,7 @@ public:
   { return mFeatureString; }
   void setFeatureString(const std::vector<std::string> &pAttrs);
 
-  CompilerConfig(const std::string &pTriple);
+  explicit CompilerConfig(const std::string &pTriple);
 
   virtual ~CompilerConfig() { }
 };
