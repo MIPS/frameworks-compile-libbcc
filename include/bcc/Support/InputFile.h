@@ -25,7 +25,7 @@ namespace bcc {
 class InputFile : public File<FileBase::kReadMode> {
   typedef File<FileBase::kReadMode> super;
 public:
-  InputFile(const std::string &pFilename, unsigned pFlags = 0);
+  explicit InputFile(const std::string &pFilename, unsigned pFlags = 0);
 
   ssize_t read(void *pBuf, size_t count);
 };

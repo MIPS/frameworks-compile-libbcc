@@ -165,7 +165,7 @@ public:
     // Create the new strings for storing the names of the global variables.
     // This has to be done as a separate pass (over the original global
     // variables), because these strings are new global variables themselves.
-    for (auto GVN : GVNameStrings) {
+    for (const auto &GVN : GVNameStrings) {
       llvm::Constant *C =
           llvm::ConstantDataArray::getString(M.getContext(), GVN);
       std::stringstream VarName;

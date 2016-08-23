@@ -29,7 +29,7 @@ namespace bcc {
 class OutputFile : public File<FileBase::kWriteMode> {
   typedef File<FileBase::kWriteMode> super;
 public:
-  OutputFile(const std::string &pFilename, unsigned pFlags = 0);
+  explicit OutputFile(const std::string &pFilename, unsigned pFlags = 0);
 
   ssize_t write(const void *pBuf, size_t count);
 

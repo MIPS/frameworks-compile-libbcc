@@ -33,7 +33,7 @@ protected:
   { return true; }
 
 public:
-  Script(Source &pSource) : mSource(&pSource) { }
+  explicit Script(Source &pSource) : mSource(&pSource) { }
 
   virtual ~Script() { }
 

@@ -26,7 +26,7 @@ namespace bcc {
 template<enum FileBase::LockModeEnum LockMode>
 class FileMutex : public FileBase {
 public:
-  FileMutex(const std::string &pFileToLock)
+  explicit FileMutex(const std::string &pFileToLock)
     : FileBase(pFileToLock + ".lock", O_RDONLY | O_CREAT, kDeleteOnClose) { }
 
   // Provide a lock() interface filled with default configuration.

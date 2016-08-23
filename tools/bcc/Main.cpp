@@ -161,7 +161,7 @@ void extractSourcesAndSlots(const llvm::cl::list<std::string>& optList,
                             std::list<std::list<std::pair<int, int>>>* sourcesAndSlots) {
   for (unsigned i = 0; i < optList.size(); ++i) {
     std::string plan = optList[i];
-    unsigned found = plan.find(":");
+    unsigned found = plan.find(':');
 
     std::string name = plan.substr(0, found);
     std::cerr << "new kernel name: " << name << std::endl;
@@ -171,7 +171,7 @@ void extractSourcesAndSlots(const llvm::cl::list<std::string>& optList,
     std::string s;
     std::list<std::pair<int, int>> planList;
     while (getline(iss, s, '.')) {
-      found = s.find(",");
+      found = s.find(',');
       std::string sourceStr = s.substr(0, found);
       std::string slotStr = s.substr(found + 1);
 
