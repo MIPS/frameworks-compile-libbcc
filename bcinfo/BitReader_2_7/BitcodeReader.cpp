@@ -357,14 +357,14 @@ private:
 };
 } // end anonymous namespace
 
-static std::error_code Error(DiagnosticHandlerFunction DiagnosticHandler,
+static std::error_code Error(const DiagnosticHandlerFunction &DiagnosticHandler,
                              std::error_code EC, const Twine &Message) {
   BitcodeDiagnosticInfo DI(EC, DS_Error, Message);
   DiagnosticHandler(DI);
   return EC;
 }
 
-static std::error_code Error(DiagnosticHandlerFunction DiagnosticHandler,
+static std::error_code Error(const DiagnosticHandlerFunction &DiagnosticHandler,
                              std::error_code EC) {
   return Error(DiagnosticHandler, EC, EC.message());
 }
@@ -3485,7 +3485,7 @@ const std::error_category &BitcodeReader::BitcodeErrorCategory() {
 static llvm::ErrorOr<llvm::Module *>
 getLazyBitcodeModuleImpl(std::unique_ptr<MemoryBuffer> &&Buffer,
                          LLVMContext &Context, bool WillMaterializeAll,
-                         DiagnosticHandlerFunction DiagnosticHandler) {
+                         const DiagnosticHandlerFunction &DiagnosticHandler) {
   Module *M = new Module(Buffer->getBufferIdentifier(), Context);
   BitcodeReader *R =
       new BitcodeReader(Buffer.get(), Context, DiagnosticHandler);
@@ -3507,7 +3507,7 @@ getLazyBitcodeModuleImpl(std::unique_ptr<MemoryBuffer> &&Buffer,
 llvm::ErrorOr<Module *>
 llvm_2_7::getLazyBitcodeModule(std::unique_ptr<MemoryBuffer> &&Buffer,
                            LLVMContext &Context,
-                           DiagnosticHandlerFunction DiagnosticHandler) {
+                           const DiagnosticHandlerFunction &DiagnosticHandler) {
   return getLazyBitcodeModuleImpl(std::move(Buffer), Context, false,
                                   DiagnosticHandler);
 }
@@ -3516,7 +3516,7 @@ llvm_2_7::getLazyBitcodeModule(std::unique_ptr<MemoryBuffer> &&Buffer,
 /// If an error occurs, return null and fill in *ErrMsg if non-null.
 llvm::ErrorOr<llvm::Module *>
 llvm_2_7::parseBitcodeFile(MemoryBufferRef Buffer, LLVMContext &Context,
-                       DiagnosticHandlerFunction DiagnosticHandler) {
+                       const DiagnosticHandlerFunction &DiagnosticHandler) {
   std::unique_ptr<MemoryBuffer> Buf = MemoryBuffer::getMemBuffer(Buffer, false);
   ErrorOr<Module *> ModuleOrErr = getLazyBitcodeModuleImpl(
       std::move(Buf), Context, true, DiagnosticHandler);
