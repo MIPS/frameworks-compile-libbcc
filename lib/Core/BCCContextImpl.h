@@ -36,7 +36,7 @@ public:
   // automatically when this context is gone.
   llvm::SmallPtrSet<Source *, 2> mOwnSources;
 
-  BCCContextImpl(BCCContext &pContext) { }
+  explicit BCCContextImpl(BCCContext &pContext) { }
   ~BCCContextImpl();
 };
 

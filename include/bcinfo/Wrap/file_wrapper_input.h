@@ -27,7 +27,7 @@
 // Define a class to wrap named files.
 class FileWrapperInput : public WrapperInput {
  public:
-  FileWrapperInput(const char* _name);
+  explicit FileWrapperInput(const char* _name);
   ~FileWrapperInput();
   // Tries to read the requested number of bytes into the buffer. Returns the
   // actual number of bytes read.

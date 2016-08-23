@@ -566,7 +566,7 @@ public:
                              llvm::Value *Arg_p,
                              llvm::IRBuilder<> &Builder,
                              llvm::SmallVector<llvm::Value*, 8> &CalleeArgs,
-                             std::function<void ()> Bump,
+                             const std::function<void ()> &Bump,
                              llvm::Instruction *LoopHeaderInsertionPoint) {
 
     bccAssert(CalleeArgs.empty());

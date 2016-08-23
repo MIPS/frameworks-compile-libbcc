@@ -78,7 +78,7 @@ private:
     "_Z9rsgFinishv",
   };
 
-  bool isPresent(std::vector<std::string> &list, std::string name) {
+  bool isPresent(std::vector<std::string> &list, const std::string &name) {
     auto lower = std::lower_bound(list.begin(),
                                   list.end(),
                                   name);

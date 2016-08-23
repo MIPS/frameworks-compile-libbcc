@@ -91,7 +91,7 @@ private:
 
 public:
   Compiler();
-  Compiler(const CompilerConfig &pConfig);
+  explicit Compiler(const CompilerConfig &pConfig);
 
   enum ErrorCode config(const CompilerConfig &pConfig);
 
