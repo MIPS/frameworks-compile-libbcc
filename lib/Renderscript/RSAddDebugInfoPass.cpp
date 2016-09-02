@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <string>
 
 #include "bcc/Assert.h"
 #include "bcc/Renderscript/RSTransforms.h"
@@ -26,6 +27,7 @@
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
+#include <llvm/ADT/SetVector.h>
 
 namespace {
 
@@ -57,21 +59,38 @@ public:
       return false;
     }
 
-    size_t nForEachKernels = me.getExportForEachSignatureCount();
+    const size_t nForEachKernels = me.getExportForEachSignatureCount();
     const char **forEachKernels = me.getExportForEachNameList();
+    const bcinfo::MetadataExtractor::Reduce *reductions =
+        me.getExportReduceList();
+    const size_t nReductions = me.getExportReduceCount();
+
+    llvm::SmallSetVector<llvm::Function *, 16> expandFuncs{};
+    auto pushExpanded = [&](const char *const name) -> void {
+      bccAssert(name && *name && (::strcmp(name, ".") != 0));
+
+      const std::string expandName = std::string(name) + ".expand";
+      if (llvm::Function *const func = Module.getFunction(expandName))
+        expandFuncs.insert(func);
+    };
+
+    for (size_t i = 0; i < nForEachKernels; ++i)
+      pushExpanded(forEachKernels[i]);
+
+    for (size_t i = 0; i < nReductions; ++i) {
+      const bcinfo::MetadataExtractor::Reduce &reduction = reductions[i];
+      pushExpanded(reduction.mAccumulatorName);
+    }
 
     // Set up the debug info builder.
     llvm::DIBuilder DebugInfo(Module);
-
     initializeDebugInfo(DebugInfo, Module);
 
-    // Attach DI metadata to each generated function.
-    for (size_t i = 0; i < nForEachKernels; ++i) {
-      std::string expandedName = forEachKernels[i];
-      expandedName += ".expand";
-
-      if (llvm::Function *kernelFunc = Module.getFunction(expandedName))
-        attachDebugInfo(DebugInfo, *kernelFunc);
+    for (const auto &expandFunc : expandFuncs) {
+      // Attach DI metadata to each generated function.
+      // No inlining has occurred at this point so it's safe to name match
+      // without worrying about inlined function bodies.
+      attachDebugInfo(DebugInfo, *expandFunc);
     }
 
     DebugInfo.finalize();
