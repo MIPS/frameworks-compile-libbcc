@@ -28,8 +28,6 @@ namespace legacy {
 class PassManager;
 } // end namespace legacy
 
-using legacy::PassManager;
-
 } // end namespace llvm
 
 namespace bcc {
