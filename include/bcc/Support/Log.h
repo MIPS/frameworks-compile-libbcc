@@ -19,7 +19,7 @@
 
 #ifndef LOG_TAG
 #   define LOG_TAG "bcc"
-#   include <cutils/log.h>
+#   include <android/log.h>
 #endif
 
 #endif // BCC_SUPPORT_LOG_H
