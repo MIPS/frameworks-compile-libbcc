@@ -24,7 +24,7 @@
 #include "BitWriter_3_2/ReaderWriter_3_2.h"
 
 #define LOG_TAG "bcinfo"
-#include <cutils/log.h>
+#include <android/log.h>
 
 #include "llvm/Bitcode/BitstreamWriter.h"
 #include "llvm/Bitcode/ReaderWriter.h"

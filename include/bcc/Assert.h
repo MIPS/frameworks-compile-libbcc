@@ -32,7 +32,7 @@
 #else
 
 #define LOG_TAG "bcc"
-#include <cutils/log.h>
+#include <android/log.h>
 
 #define __ABORT_ON_FAILURES 1
 

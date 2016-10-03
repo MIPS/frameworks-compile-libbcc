@@ -19,7 +19,7 @@
 #include "bcinfo/Wrap/in_memory_wrapper_input.h"
 
 #define LOG_TAG "bcinfo"
-#include <cutils/log.h>
+#include <android/log.h>
 
 #include "llvm/Bitcode/ReaderWriter.h"
 
