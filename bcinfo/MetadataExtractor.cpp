@@ -20,7 +20,7 @@
 #include "rsDefines.h"
 
 #define LOG_TAG "bcinfo"
-#include <cutils/log.h>
+#include <android/log.h>
 #ifdef __ANDROID__
 #include <cutils/properties.h>
 #endif
