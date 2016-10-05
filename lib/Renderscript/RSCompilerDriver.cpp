@@ -152,7 +152,7 @@ Compiler::ErrorCode RSCompilerDriver::compileScript(RSScript& pScript, const cha
   {
     // FIXME(srhines): Windows compilation can't use locking like this, but
     // we also don't need to worry about concurrent writers of the same file.
-#ifndef USE_MINGW
+#ifndef _WIN32
     //===------------------------------------------------------------------===//
     // Acquire the write lock for writing output object file.
     //===------------------------------------------------------------------===//
