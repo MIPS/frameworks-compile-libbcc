@@ -175,7 +175,7 @@ public:
       VarAsStr->setInitializer(C);
       VarAsStr->setConstant(true);
       VarAsStr->setLinkage(llvm::GlobalValue::PrivateLinkage);
-      VarAsStr->setUnnamedAddr(true);
+      VarAsStr->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::Global);
       // VarAsStr has type [_ x i8]*. Cast to i8* for storing in
       // .rs.global_names.
       GVNames.push_back(llvm::ConstantExpr::getBitCast(VarAsStr, VoidPtrTy));
