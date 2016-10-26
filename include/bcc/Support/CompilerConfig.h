@@ -20,6 +20,7 @@
 #include <string>
 #include <vector>
 
+#include <llvm/ADT/Optional.h>
 #include <llvm/ADT/Triple.h>
 #include <llvm/Support/CodeGen.h>
 #include <llvm/Target/TargetOptions.h>
@@ -48,7 +49,7 @@ private:
 
   llvm::CodeGenOpt::Level mOptLevel;
 
-  llvm::Reloc::Model mRelocModel;
+  llvm::Optional<llvm::Reloc::Model> mRelocModel;
 
   // Are we set up to compile for full precision or something reduced?
   bool mFullPrecision;
@@ -93,7 +94,7 @@ public:
   inline void setOptimizationLevel(llvm::CodeGenOpt::Level pOptLvl)
   { mOptLevel = pOptLvl; }
 
-  inline llvm::Reloc::Model getRelocationModel() const
+  inline llvm::Optional<llvm::Reloc::Model> getRelocationModel() const
   { return mRelocModel; }
   inline void setRelocationModel(llvm::Reloc::Model pRelocModel)
   { mRelocModel = pRelocModel; }
