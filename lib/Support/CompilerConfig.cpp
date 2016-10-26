@@ -64,11 +64,6 @@ CompilerConfig::CompilerConfig(const std::string &pTriple)
   mCodeModel = llvm::CodeModel::Small;
 
   //===--------------------------------------------------------------------===//
-  // Default setting for relocation model
-  //===--------------------------------------------------------------------===//
-  mRelocModel = llvm::Reloc::Default;
-
-  //===--------------------------------------------------------------------===//
   // Default setting for optimization level (-O2)
   //===--------------------------------------------------------------------===//
   mOptLevel = llvm::CodeGenOpt::Default;
@@ -198,8 +193,8 @@ bool CompilerConfig::initializeArch() {
 #if defined (PROVIDE_MIPS_CODEGEN)
   case llvm::Triple::mips:
   case llvm::Triple::mipsel:
-    if (getRelocationModel() == llvm::Reloc::Default) {
-      setRelocationModel(llvm::Reloc::Static);
+    if (!mRelocModel.hasValue()) {
+      mRelocModel = llvm::Reloc::Static;
     }
     break;
 #endif  // PROVIDE_MIPS_CODEGEN
@@ -256,7 +251,7 @@ bool CompilerConfig::initializeArch() {
     setCPU("core2");
 #endif
     // x86_64 needs small CodeModel if use PIC_ reloc, or else dlopen failed with TEXTREL.
-    if (getRelocationModel() == llvm::Reloc::PIC_) {
+    if (mRelocModel.hasValue() && mRelocModel.getValue() == llvm::Reloc::PIC_) {
       setCodeModel(llvm::CodeModel::Small);
     } else {
       setCodeModel(llvm::CodeModel::Medium);
