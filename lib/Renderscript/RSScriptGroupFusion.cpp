@@ -309,7 +309,7 @@ bool fuseKernels(bcc::BCCContext& Context,
   llvm::NamedMDNode* ExportForEachMD =
     mergedModule->getOrInsertNamedMetadata("#rs_export_foreach");
   llvm::MDString* sigMDStr = llvm::MDString::get(ctxt,
-                                                 llvm::utostr_32(fusedFunctionSignature));
+                                                 llvm::utostr(fusedFunctionSignature));
   llvm::MDNode* sigMDNode = llvm::MDNode::get(ctxt, sigMDStr);
   ExportForEachMD->addOperand(sigMDNode);
 
