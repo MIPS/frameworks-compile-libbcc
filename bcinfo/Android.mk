@@ -89,6 +89,8 @@ include $(LOCAL_PATH)/../llvm-loadable-libbcc.mk
 
 ifneq ($(CAN_BUILD_HOST_LLVM_LOADABLE_MODULE),true)
 LOCAL_SHARED_LIBRARIES_linux += libLLVM
+else
+LOCAL_ALLOW_UNDEFINED_SYMBOLS_linux := true
 endif
 LOCAL_SHARED_LIBRARIES_darwin += libLLVM
 LOCAL_SHARED_LIBRARIES_windows += libLLVM
