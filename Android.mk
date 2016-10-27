@@ -103,7 +103,7 @@ include $(LIBBCC_ROOT_PATH)/llvm-loadable-libbcc.mk
 
 ifeq ($(CAN_BUILD_HOST_LLVM_LOADABLE_MODULE),true)
 LOCAL_STATIC_LIBRARIES_linux += libLLVMLinker
-LOCAL_ALLOW_UNDEFINED_SYMBOLS_linux := true
+LOCAL_ALLOW_UNDEFINED_SYMBOLS := true
 else
 LOCAL_SHARED_LIBRARIES_linux += libLLVM
 endif
