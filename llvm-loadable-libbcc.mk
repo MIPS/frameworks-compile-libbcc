@@ -16,8 +16,7 @@
 
 # Checks whether libbcc can be built as an LLVM loadable module on the
 # host.
-# Disable loadable module build temporarily because of undefined symbols.
-CAN_BUILD_HOST_LLVM_LOADABLE_MODULE := false
+CAN_BUILD_HOST_LLVM_LOADABLE_MODULE := true
 
 ifneq ($(FORCE_BUILD_LLVM_COMPONENTS),true)
 CAN_BUILD_HOST_LLVM_LOADABLE_MODULE := false
