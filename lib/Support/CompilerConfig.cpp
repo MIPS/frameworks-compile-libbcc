@@ -196,8 +196,15 @@ bool CompilerConfig::initializeArch() {
 #endif  // PROVIDE_ARM64_CODEGEN
 
 #if defined (PROVIDE_MIPS_CODEGEN)
-  case llvm::Triple::mips:
   case llvm::Triple::mipsel:
+    // Use same defaults as NDK tools
+#if defined (ARCH_MIPS_HAVE_R6)
+    setCPU("mips32r6");
+#else
+    setCPU("mips32");                    // Use 32r1 ops only
+    attributes.push_back("+fpxx");       // fp regs may be 32 or 64 bits wide
+#endif  // ARCH_MIPS_HAVE_R6
+    attributes.push_back("+nooddspreg"); // no odd-numbered single-prec fp regs
     if (getRelocationModel() == llvm::Reloc::Default) {
       setRelocationModel(llvm::Reloc::Static);
     }
@@ -205,7 +212,6 @@ bool CompilerConfig::initializeArch() {
 #endif  // PROVIDE_MIPS_CODEGEN
 
 #if defined (PROVIDE_MIPS64_CODEGEN)
-  case llvm::Triple::mips64:
   case llvm::Triple::mips64el:
     // Default revision for MIPS64 Android is R6.
     setCPU("mips64r6");
