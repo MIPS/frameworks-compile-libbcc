@@ -40,9 +40,17 @@ libbcinfo_STATIC_LIBRARIES := \
   libLLVMBitReader_3_0 \
   libLLVMBitWriter_3_2
 
+libbcinfo_LLVM_STATIC_LIBRARIES := \
+  libLLVMBitReader \
+  libLLVMCore \
+  libLLVMSupport
+
 LLVM_ROOT_PATH := external/llvm
 
 ifneq (true,$(DISABLE_LLVM_DEVICE_BUILDS))
+#=====================================================================
+# Shared library for the target
+#=====================================================================
 include $(CLEAR_VARS)
 
 LOCAL_MODULE := libbcinfo
@@ -56,7 +64,15 @@ LOCAL_CFLAGS += $(local_cflags_for_libbcinfo)
 LOCAL_C_INCLUDES := $(libbcinfo_C_INCLUDES)
 
 LOCAL_STATIC_LIBRARIES := $(libbcinfo_STATIC_LIBRARIES)
-LOCAL_SHARED_LIBRARIES := libLLVM libcutils liblog
+
+# Statically link-in the required LLVM libraries
+LOCAL_STATIC_LIBRARIES += $(libbcinfo_LLVM_STATIC_LIBRARIES)
+
+LOCAL_SHARED_LIBRARIES := libcutils liblog
+
+# Export only the symbols in the bcinfo namespace.  In particular, do not
+# export symbols from the LLVM libraries.
+LOCAL_LDFLAGS += -Wl,--version-script,${LOCAL_PATH}/libbcinfo.map
 
 include $(LLVM_ROOT_PATH)/llvm-device-build.mk
 include $(LLVM_GEN_ATTRIBUTES_MK)
@@ -66,6 +82,9 @@ endif
 # Don't build for unbundled branches
 ifeq (,$(TARGET_BUILD_APPS))
 
+#=====================================================================
+# Shared library for the host
+#=====================================================================
 include $(CLEAR_VARS)
 
 LOCAL_MODULE := libbcinfo
