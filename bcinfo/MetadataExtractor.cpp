@@ -494,7 +494,7 @@ bool MetadataExtractor::populateReduceMetadata(const llvm::NamedMDNode *ReduceMe
   if (!ReduceMetadata || !(mExportReduceCount = ReduceMetadata->getNumOperands()))
     return true;
 
-  Reduce *TmpReduceList = new Reduce[mExportReduceCount];
+  std::unique_ptr<Reduce[]> TmpReduceList(new Reduce[mExportReduceCount]);
 
   for (size_t i = 0; i < mExportReduceCount; i++) {
     llvm::MDNode *Node = ReduceMetadata->getOperand(i);
@@ -542,7 +542,7 @@ bool MetadataExtractor::populateReduceMetadata(const llvm::NamedMDNode *ReduceMe
     TmpReduceList[i].mHalterName = createStringFromOptionalValue(Node, 6);
   }
 
-  mExportReduceList = TmpReduceList;
+  mExportReduceList = TmpReduceList.release();
   return true;
 }
 
