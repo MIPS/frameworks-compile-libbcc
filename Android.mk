@@ -57,17 +57,6 @@ LOCAL_WHOLE_STATIC_LIBRARIES := $(libbcc_WHOLE_STATIC_LIBRARIES)
 
 LOCAL_SHARED_LIBRARIES := libbcinfo libLLVM libdl libutils libcutils liblog libc++
 
-# Modules that need get installed if and only if the target libbcc.so is
-# installed.
-LOCAL_REQUIRED_MODULES := libclcore.bc libclcore_debug.bc libclcore_g.bc libcompiler_rt
-
-LOCAL_REQUIRED_MODULES_x86 += libclcore_x86.bc
-LOCAL_REQUIRED_MODULES_x86_64 += libclcore_x86.bc
-
-ifeq ($(ARCH_ARM_HAVE_NEON),true)
-  LOCAL_REQUIRED_MODULES_arm += libclcore_neon.bc
-endif
-
 include $(LIBBCC_DEVICE_BUILD_MK)
 include $(LLVM_DEVICE_BUILD_MK)
 include $(BUILD_SHARED_LIBRARY)
