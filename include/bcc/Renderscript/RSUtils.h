@@ -28,7 +28,7 @@
 namespace {
 
 static inline llvm::StringRef getUnsuffixedStructName(const llvm::StructType *T) {
-#ifdef FORCE_BUILD_LLVM_DISABLE_NDEBUG
+#ifdef _DEBUG
   // Bug: 22926131
   // When building with assertions enabled, LLVM cannot read the name of a
   // literal (anonymous) structure, because they shouldn't actually ever have
