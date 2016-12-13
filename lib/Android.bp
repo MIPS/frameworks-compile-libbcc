@@ -1,5 +1,0 @@
-subdirs = [
-    "Core",
-    "Renderscript",
-    "Support",
-]
