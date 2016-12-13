@@ -1,0 +1,18 @@
+cc_library_static {
+    name: "libLLVMBitReader_3_0",
+    defaults: [
+        "llvm-defaults",
+        "llvm-generated-headers",
+    ],
+    host_supported: true,
+
+    srcs: ["BitcodeReader.cpp"],
+    target: {
+        host: {
+            cflags: ["-D__HOST__"],
+        },
+        windows: {
+            enabled: true,
+        },
+    },
+}
