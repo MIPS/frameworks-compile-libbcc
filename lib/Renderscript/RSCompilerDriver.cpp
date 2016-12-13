@@ -282,7 +282,7 @@ bool RSCompilerDriver::build(BCCContext &pContext,
 
 // Assertion-enabled builds can't compile legacy bitcode (due to the use of
 // getName() with anonymous structure definitions).
-#ifdef _DEBUG
+#ifdef FORCE_BUILD_LLVM_DISABLE_NDEBUG
   static const uint32_t kSlangMinimumFixedStructureNames = 2310;
   uint32_t version = wrapper.getCompilerVersion();
   if (version < kSlangMinimumFixedStructureNames) {
