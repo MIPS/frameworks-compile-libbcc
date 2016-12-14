@@ -18,10 +18,7 @@
 // ========================================================
 cc_binary_host {
     name: "bcinfo",
-    defaults: [
-        "llvm-defaults",
-        "llvm-generated-headers",
-    ],
+    defaults: ["llvm-defaults"],
 
     srcs: ["main.cpp"],
 
