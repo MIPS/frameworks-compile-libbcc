@@ -37,6 +37,8 @@ cc_library_static {
         "RSX86TranslateGEPPass.cpp",
     ],
 
+    shared_libs: ["libbcinfo"],
+
     target: {
         windows: {
             enabled: true,
