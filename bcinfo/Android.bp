@@ -42,8 +42,10 @@ cc_library_shared {
         },
     },
 
+    header_libs: ["libbcinfo-headers"],
+    export_header_lib_headers: ["libbcinfo-headers"],
+
     include_dirs: [
-        "frameworks/compile/libbcc/include",
         "frameworks/rs",
         "frameworks/compile/slang",
     ],
@@ -101,6 +103,17 @@ cc_library_shared {
             // Export only the symbols in the bcinfo namespace.  In particular,
             // do not, export symbols from the LLVM libraries.
             version_script: "libbcinfo.map",
+        },
+    },
+}
+
+cc_library_headers {
+    name: "libbcinfo-headers",
+    host_supported: true,
+    export_include_dirs: ["include"],
+    target: {
+        windows: {
+            enabled: true,
         },
     },
 }

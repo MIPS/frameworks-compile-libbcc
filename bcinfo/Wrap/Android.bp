@@ -35,5 +35,5 @@ cc_library_static {
         },
     },
 
-    include_dirs: ["frameworks/compile/libbcc/include"],
+    header_libs: ["libbcinfo-headers"],
 }
