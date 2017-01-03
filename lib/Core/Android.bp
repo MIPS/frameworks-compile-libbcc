@@ -28,6 +28,8 @@ cc_library_static {
         "Source.cpp",
     ],
 
+    shared_libs: ["libbcinfo"],
+
     target: {
         windows: {
             enabled: true,
