@@ -24,6 +24,8 @@
 #include <dlfcn.h>
 #include <stdlib.h>
 
+#include <log/log.h>
+
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallString.h>
 #include <llvm/Config/config.h>
