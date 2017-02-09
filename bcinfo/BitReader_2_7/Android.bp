@@ -3,6 +3,10 @@ cc_library_static {
     defaults: ["llvm-defaults",],
     host_supported: true,
 
+    // We don't control the source files under this dir.
+    // So, disable tidy checks.
+    tidy: false,
+
     srcs: ["BitcodeReader.cpp"],
 
     target: {
