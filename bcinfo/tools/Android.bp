@@ -33,8 +33,6 @@ cc_binary_host {
 
     cflags: ["-D__HOST__"],
 
-    include_dirs: ["frameworks/compile/libbcc/include"],
-
     host_ldlibs: [
         "-ldl",
         "-lpthread",
