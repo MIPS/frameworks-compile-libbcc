@@ -38,16 +38,11 @@
 #include <llvm/Support/raw_ostream.h>
 
 #include <bcc/BCCContext.h>
-#include <bcc/Compiler.h>
-#include <bcc/Config/Config.h>
-#include <bcc/Renderscript/RSCompilerDriver.h>
-#include <bcc/Script.h>
+#include <bcc/CompilerConfig.h>
+#include <bcc/Config.h>
+#include <bcc/Initialization.h>
+#include <bcc/RSCompilerDriver.h>
 #include <bcc/Source.h>
-#include <bcc/Support/Log.h>
-#include <bcc/Support/CompilerConfig.h>
-#include <bcc/Support/Initialization.h>
-#include <bcc/Support/InputFile.h>
-#include <bcc/Support/OutputFile.h>
 
 using namespace bcc;
 
