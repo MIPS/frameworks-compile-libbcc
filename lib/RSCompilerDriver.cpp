@@ -28,7 +28,7 @@
 #include "bcc/CompilerConfig.h"
 #include "bcc/Config.h"
 #include "bcc/Initialization.h"
-#include "bcc/RSScript.h"
+#include "bcc/Script.h"
 #include "bcc/Source.h"
 #include "bcinfo/BitcodeWrapper.h"
 #include "bcinfo/MetadataExtractor.h"
@@ -68,11 +68,10 @@ RSCompilerDriver::~RSCompilerDriver() {
 extern llvm::cl::opt<bool> EnableGlobalMerge;
 #endif
 
-bool RSCompilerDriver::setupConfig(const RSScript &pScript) {
+bool RSCompilerDriver::setupConfig(const Script &pScript) {
   bool changed = false;
 
-  const llvm::CodeGenOpt::Level script_opt_level =
-      static_cast<llvm::CodeGenOpt::Level>(pScript.getOptimizationLevel());
+  const llvm::CodeGenOpt::Level script_opt_level = pScript.getOptimizationLevel();
 
 #if defined(PROVIDE_ARM_CODEGEN)
   EnableGlobalMerge = mEnableGlobalMerge;
@@ -112,7 +111,7 @@ bool RSCompilerDriver::setupConfig(const RSScript &pScript) {
   return changed;
 }
 
-Compiler::ErrorCode RSCompilerDriver::compileScript(RSScript& pScript, const char* pScriptName,
+Compiler::ErrorCode RSCompilerDriver::compileScript(Script& pScript, const char* pScriptName,
                                                     const char* pOutputPath,
                                                     const char* pRuntimePath,
                                                     const char* pBuildChecksum,
@@ -144,7 +143,7 @@ Compiler::ErrorCode RSCompilerDriver::compileScript(RSScript& pScript, const cha
   //===--------------------------------------------------------------------===//
   // Link RS script with Renderscript runtime.
   //===--------------------------------------------------------------------===//
-  if (!RSScript::LinkRuntime(pScript, pRuntimePath)) {
+  if (!pScript.LinkRuntime(pRuntimePath)) {
     ALOGE("Failed to link script '%s' with Renderscript runtime %s!",
           pScriptName, pRuntimePath);
     return Compiler::kErrInvalidSource;
@@ -265,7 +264,8 @@ bool RSCompilerDriver::build(BCCContext &pContext,
     return false;
   }
 
-  RSScript script(*source, getConfig());
+  Script script(source);
+  script.setOptimizationLevel(getConfig()->getOptimizationLevel());
   if (pLinkRuntimeCallback) {
     setLinkRuntimeCallback(pLinkRuntimeCallback);
   }
@@ -277,8 +277,7 @@ bool RSCompilerDriver::build(BCCContext &pContext,
 
   // Read information from bitcode wrapper.
   bcinfo::BitcodeWrapper wrapper(pBitcode, pBitcodeSize);
-  script.setCompilerVersion(wrapper.getCompilerVersion());
-  script.setOptimizationLevel(static_cast<RSScript::OptimizationLevel>(
+  script.setOptimizationLevel(static_cast<llvm::CodeGenOpt::Level>(
                               wrapper.getOptimizationLevel()));
 
 // Assertion-enabled builds can't compile legacy bitcode (due to the use of
@@ -385,11 +384,13 @@ bool RSCompilerDriver::buildScriptGroup(
 
   const std::unique_ptr<Source> source(
       Source::CreateFromModule(Context, pOutputFilepath, module, true));
-  RSScript script(*source);
+  Script script(source.get());
 
   // Embed the info string directly in the ELF
   script.setEmbedInfo(true);
-  script.setOptimizationLevel(RSScript::kOptLvl3);
+  // TODO jeanluc Should we override the config's optimization?
+  // i.e., why not script.setOptimizationLevel(getConfig()->getOptimizationLevel)?
+  script.setOptimizationLevel(llvm::CodeGenOpt::Level::Aggressive);
   script.setEmbedGlobalInfo(mEmbedGlobalInfo);
   script.setEmbedGlobalInfoSkipConstant(mEmbedGlobalInfoSkipConstant);
 
@@ -412,7 +413,7 @@ bool RSCompilerDriver::buildScriptGroup(
   return true;
 }
 
-bool RSCompilerDriver::buildForCompatLib(RSScript &pScript, const char *pOut,
+bool RSCompilerDriver::buildForCompatLib(Script &pScript, const char *pOut,
                                          const char *pBuildChecksum,
                                          const char *pRuntimePath,
                                          bool pDumpIR) {
