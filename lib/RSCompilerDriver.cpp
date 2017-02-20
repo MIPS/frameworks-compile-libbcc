@@ -156,9 +156,9 @@ Compiler::ErrorCode RSCompilerDriver::compileScript(Script& pScript, const char*
     //===------------------------------------------------------------------===//
     // Acquire the write lock for writing output object file.
     //===------------------------------------------------------------------===//
-    FileMutex<FileBase::kWriteLock> write_output_mutex(pOutputPath);
+    FileMutex write_output_mutex(pOutputPath);
 
-    if (write_output_mutex.hasError() || !write_output_mutex.lock()) {
+    if (write_output_mutex.hasError() || !write_output_mutex.lockMutex()) {
       ALOGE("Unable to acquire the lock for writing %s! (%s)",
             pOutputPath, write_output_mutex.getErrorMessage().c_str());
       return Compiler::kErrInvalidSource;

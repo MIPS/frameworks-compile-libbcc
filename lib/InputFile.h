@@ -17,13 +17,11 @@
 #ifndef BCC_SUPPORT_INPUT_FILE_H
 #define BCC_SUPPORT_INPUT_FILE_H
 
-#include "File.h"
 #include "FileBase.h"
 
 namespace bcc {
 
-class InputFile : public File<FileBase::kReadMode> {
-  typedef File<FileBase::kReadMode> super;
+class InputFile : public FileBase {
 public:
   explicit InputFile(const std::string &pFilename, unsigned pFlags = 0);
 

@@ -21,7 +21,7 @@
 using namespace bcc;
 
 InputFile::InputFile(const std::string &pFilename, unsigned pFlags)
-  : super(pFilename, pFlags) { }
+        : FileBase(pFilename, O_RDONLY, pFlags) { }
 
 ssize_t InputFile::read(void *pBuf, size_t count) {
   if ((mFD < 0) || hasError()) {

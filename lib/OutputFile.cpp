@@ -24,7 +24,7 @@
 using namespace bcc;
 
 OutputFile::OutputFile(const std::string &pFilename, unsigned pFlags)
-  : super(pFilename, pFlags) { }
+        : FileBase(pFilename, O_RDWR | O_CREAT, pFlags) { }
 
 ssize_t OutputFile::write(const void *pBuf, size_t count) {
   if ((mFD < 0) || hasError()) {
