@@ -18,7 +18,7 @@
 #define BCC_RS_COMPILER_DRIVER_H
 
 #include "bcc/Compiler.h"
-#include "bcc/RSScript.h"
+#include "bcc/Script.h"
 
 #include "bcinfo/MetadataExtractor.h"
 
@@ -66,11 +66,11 @@ private:
 
   // Setup the compiler config for the given script. Return true if mConfig has
   // been changed and false if it remains unchanged.
-  bool setupConfig(const RSScript &pScript);
+  bool setupConfig(const Script &pScript);
 
   // Compiles the provided bitcode, placing the binary at pOutputPath.
   // - If pDumpIR is true, a ".ll" file will also be created.
-  Compiler::ErrorCode compileScript(RSScript& pScript, const char* pScriptName,
+  Compiler::ErrorCode compileScript(Script& pScript, const char* pScriptName,
                                     const char* pOutputPath,
                                     const char* pRuntimePath,
                                     const char* pBuildChecksum,
@@ -157,7 +157,7 @@ public:
       const std::list<std::string>& invokeBatchNames);
 
   // Returns true if script is successfully compiled.
-  bool buildForCompatLib(RSScript &pScript, const char *pOut,
+  bool buildForCompatLib(Script &pScript, const char *pOut,
                          const char *pBuildChecksum, const char *pRuntimePath,
                          bool pDumpIR);
 };

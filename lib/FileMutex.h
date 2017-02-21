@@ -23,18 +23,17 @@
 
 namespace bcc {
 
-template<enum FileBase::LockModeEnum LockMode>
+// This class is used to acquire write locks.
+// TODO(jeanluc) More documentation.
 class FileMutex : public FileBase {
 public:
   explicit FileMutex(const std::string &pFileToLock)
     : FileBase(pFileToLock + ".lock", O_RDONLY | O_CREAT, kDeleteOnClose) { }
 
   // Provide a lock() interface filled with default configuration.
-  inline bool lock(bool pNonblocking = true,
-                   unsigned pMaxRetry = FileBase::kDefaultMaxRetryLock,
-                   useconds_t pRetryInterval =
-                       FileBase::kDefaultRetryLockInterval) {
-    return FileBase::lock(LockMode, pNonblocking, pMaxRetry, pRetryInterval);
+  inline bool lockMutex() {
+    return FileBase::lock(FileBase::kWriteLock, true, FileBase::kDefaultMaxRetryLock,
+                          FileBase::kDefaultRetryLockInterval);
   }
 };
 
