@@ -345,7 +345,7 @@ int main(int argc, char **argv) {
       return EXIT_FAILURE;
     }
 
-    std::unique_ptr<RSScript> s(new (std::nothrow) RSScript(*source, RSCD.getConfig()));
+    std::unique_ptr<Script> s(new (std::nothrow) Script(source));
     if (s == nullptr) {
       llvm::errs() << "Out of memory when creating script for file `"
                    << OptInputFilenames[0] << "'!\n";
@@ -353,6 +353,7 @@ int main(int argc, char **argv) {
       return EXIT_FAILURE;
     }
 
+    s->setOptimizationLevel(RSCD.getConfig()->getOptimizationLevel());
     llvm::SmallString<80> output(OptOutputPath);
     llvm::sys::path::append(output, "/", OptOutputFilename);
     llvm::sys::path::replace_extension(output, ".o");

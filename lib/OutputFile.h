@@ -17,7 +17,6 @@
 #ifndef BCC_SUPPORT_OUTPUT_FILE_H
 #define BCC_SUPPORT_OUTPUT_FILE_H
 
-#include "File.h"
 #include "FileBase.h"
 
 namespace llvm {
@@ -26,8 +25,7 @@ namespace llvm {
 
 namespace bcc {
 
-class OutputFile : public File<FileBase::kWriteMode> {
-  typedef File<FileBase::kWriteMode> super;
+class OutputFile : public FileBase {
 public:
   explicit OutputFile(const std::string &pFilename, unsigned pFlags = 0);
 
