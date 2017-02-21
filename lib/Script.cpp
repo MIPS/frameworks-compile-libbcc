@@ -16,22 +16,44 @@
 
 #include "bcc/Script.h"
 
+#include "Assert.h"
+#include "Log.h"
+
+#include "bcc/CompilerConfig.h"
 #include "bcc/Source.h"
 
 using namespace bcc;
 
-bool Script::reset(Source &pSource, bool pPreserveCurrent) {
-  if (mSource == &pSource) {
+Script::Script(Source *pSource)
+    : mSource(pSource),
+      mOptimizationLevel(llvm::CodeGenOpt::Aggressive),
+      mLinkRuntimeCallback(nullptr), mEmbedInfo(false), mEmbedGlobalInfo(false),
+      mEmbedGlobalInfoSkipConstant(false) {}
+
+bool Script::LinkRuntime(const char *core_lib) {
+  bccAssert(core_lib != nullptr);
+
+  // Using the same context with the source.
+  BCCContext &context = mSource->getContext();
+
+  Source *libclcore_source = Source::CreateFromFile(context, core_lib);
+  if (libclcore_source == nullptr) {
+    ALOGE("Failed to load Renderscript library '%s' to link!", core_lib);
     return false;
   }
 
-  if (!pPreserveCurrent) {
-    delete mSource;
+  if (mLinkRuntimeCallback != nullptr) {
+    mLinkRuntimeCallback(this, &mSource->getModule(),
+                         &libclcore_source->getModule());
   }
-  mSource = &pSource;
-  return doReset();
+
+  if (!mSource->merge(*libclcore_source)) {
+    ALOGE("Failed to link Renderscript library '%s'!", core_lib);
+    delete libclcore_source;
+    return false;
+  }
+
+  return true;
 }
 
-bool Script::mergeSource(Source &pSource) {
-  return mSource->merge(pSource);
-}
+bool Script::mergeSource(Source &pSource) { return mSource->merge(pSource); }

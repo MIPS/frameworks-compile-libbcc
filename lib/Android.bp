@@ -36,7 +36,6 @@ cc_library_shared {
         "RSIsThreadablePass.cpp",
         "RSKernelExpand.cpp",
         "RSScreenFunctionsPass.cpp",
-        "RSScript.cpp",
         "RSScriptGroupFusion.cpp",
         "RSStubsWhiteList.cpp",
         "RSX86CallConvPass.cpp",

@@ -120,17 +120,6 @@ public:
 
   void unlock();
 
-  // Map the file content to the memory.
-  //
-  // One who gets non-null android::FileMap returned from this API is responsible
-  // for destroying it after the use.
-  android::FileMap *createMap(off_t pOffset, size_t pLength, bool pIsReadOnly);
-
-  size_t getSize();
-
-  off_t seek(off_t pOffset);
-  off_t tell();
-
   inline bool hasError() const
   { return (bool) mError; }
 
@@ -141,9 +130,6 @@ public:
   // and is passed by value (that is, it's not a member of std::error_code.)
   inline std::string getErrorMessage() const
   { return mError.message(); }
-
-  inline const std::string &getName() const
-  { return mName; }
 
   void close();
 
