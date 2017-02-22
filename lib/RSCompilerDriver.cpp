@@ -19,7 +19,6 @@
 #include "Assert.h"
 #include "FileMutex.h"
 #include "Log.h"
-#include "OutputFile.h"
 #include "RSScriptGroupFusion.h"
 
 #include "bcc/BCCContext.h"
@@ -37,6 +36,7 @@
 #include <llvm/IR/Module.h>
 #include "llvm/Linker/Linker.h"
 #include <llvm/Support/CommandLine.h>
+#include <llvm/Support/FileSystem.h>
 #include <llvm/Support/Path.h>
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Target/TargetMachine.h>
@@ -160,18 +160,17 @@ Compiler::ErrorCode RSCompilerDriver::compileScript(Script& pScript, const char*
     if (write_output_mutex.hasError() || !write_output_mutex.lockMutex()) {
       ALOGE("Unable to acquire the lock for writing %s! (%s)",
             pOutputPath, write_output_mutex.getErrorMessage().c_str());
-      return Compiler::kErrInvalidSource;
+      return Compiler::kErrInvalidOutputFileState;
     }
 #endif
 
     // Open the output file for write.
-    OutputFile output_file(pOutputPath,
-                           FileBase::kTruncate | FileBase::kBinary);
-
-    if (output_file.hasError()) {
-        ALOGE("Unable to open %s for write! (%s)", pOutputPath,
-              output_file.getErrorMessage().c_str());
-      return Compiler::kErrInvalidSource;
+    std::error_code error;
+    llvm::raw_fd_ostream out_stream(pOutputPath, error, llvm::sys::fs::F_RW);
+    if (error) {
+      ALOGE("Unable to open %s for write! (%s)", pOutputPath,
+            error.message().c_str());
+      return Compiler::kErrPrepareOutput;
     }
 
     // Setup the config to the compiler.
@@ -192,23 +191,22 @@ Compiler::ErrorCode RSCompilerDriver::compileScript(Script& pScript, const char*
       }
     }
 
-    OutputFile *ir_file = nullptr;
-    llvm::raw_fd_ostream *IRStream = nullptr;
+    std::unique_ptr<llvm::raw_fd_ostream> IRStream;
     if (pDumpIR) {
       std::string path(pOutputPath);
       path.append(".ll");
-      ir_file = new OutputFile(path.c_str(), FileBase::kTruncate);
-      IRStream = ir_file->dup();
+      IRStream.reset(new llvm::raw_fd_ostream(
+          path.c_str(), error, llvm::sys::fs::F_RW | llvm::sys::fs::F_Text));
+      if (error) {
+        ALOGE("Unable to open %s for write! (%s)", path.c_str(),
+              error.message().c_str());
+        return Compiler::kErrPrepareOutput;
+      }
     }
 
     // Run the compiler.
     Compiler::ErrorCode compile_result =
-        mCompiler.compile(pScript, output_file, IRStream);
-
-    if (ir_file) {
-      ir_file->close();
-      delete ir_file;
-    }
+        mCompiler.compile(pScript, out_stream, IRStream.get());
 
     if (compile_result != Compiler::kSuccess) {
       ALOGE("Unable to compile the source to file %s! (%s)", pOutputPath,
