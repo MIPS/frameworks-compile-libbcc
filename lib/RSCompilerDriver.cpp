@@ -277,6 +277,7 @@ bool RSCompilerDriver::build(BCCContext &pContext,
 
   // Read information from bitcode wrapper.
   bcinfo::BitcodeWrapper wrapper(pBitcode, pBitcodeSize);
+  script.setCompilerVersion(wrapper.getCompilerVersion());
   script.setOptimizationLevel(static_cast<llvm::CodeGenOpt::Level>(
                               wrapper.getOptimizationLevel()));
 
