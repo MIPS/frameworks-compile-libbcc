@@ -18,7 +18,6 @@
 
 #include "Assert.h"
 #include "FileMutex.h"
-#include "InputFile.h"
 #include "Log.h"
 #include "OutputFile.h"
 #include "RSScriptGroupFusion.h"

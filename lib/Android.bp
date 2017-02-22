@@ -25,7 +25,6 @@ cc_library_shared {
         "Disassembler.cpp",
         "FileBase.cpp",
         "Initialization.cpp",
-        "InputFile.cpp",
         "OutputFile.cpp",
         "RSAddDebugInfoPass.cpp",
         "RSCompilerDriver.cpp",
