@@ -33,7 +33,6 @@ class PassManager;
 namespace bcc {
 
 class CompilerConfig;
-class OutputFile;
 class Script;
 
 //===----------------------------------------------------------------------===//
@@ -99,10 +98,6 @@ public:
   //                 will be written to IRStream.
   enum ErrorCode compile(Script &pScript, llvm::raw_pwrite_stream &pResult,
                          llvm::raw_ostream *IRStream);
-
-  // Compile a script and output the result to a file.
-  enum ErrorCode compile(Script &pScript, OutputFile &pResult,
-                         llvm::raw_ostream *IRStream = 0);
 
   const llvm::TargetMachine& getTargetMachine() const
   { return *mTarget; }
