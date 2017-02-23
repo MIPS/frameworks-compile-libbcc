@@ -16,7 +16,6 @@
 
 #include "Assert.h"
 #include "Log.h"
-#include "OutputFile.h"
 #include "RSTransforms.h"
 #include "RSUtils.h"
 #include "rsDefines.h"
@@ -288,29 +287,6 @@ enum Compiler::ErrorCode Compiler::compile(Script &script,
   }
 
   return kSuccess;
-}
-
-enum Compiler::ErrorCode Compiler::compile(Script &script,
-                                           OutputFile &pResult,
-                                           llvm::raw_ostream *IRStream) {
-  // Check the state of the specified output file.
-  if (pResult.hasError()) {
-    return kErrInvalidOutputFileState;
-  }
-
-  // Open the output file decorated in llvm::raw_ostream.
-  llvm::raw_pwrite_stream *out = pResult.dup();
-  if (out == nullptr) {
-    return kErrPrepareOutput;
-  }
-
-  // Delegate the request.
-  enum Compiler::ErrorCode err = compile(script, *out, IRStream);
-
-  // Close the output before return.
-  delete out;
-
-  return err;
 }
 
 bool Compiler::addInternalizeSymbolsPass(Script &script, llvm::legacy::PassManager &pPM) {
