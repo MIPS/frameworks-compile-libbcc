@@ -26,6 +26,7 @@ using namespace bcc;
 
 Script::Script(Source *pSource)
     : mSource(pSource),
+      mCompilerVersion(0),
       mOptimizationLevel(llvm::CodeGenOpt::Aggressive),
       mLinkRuntimeCallback(nullptr), mEmbedInfo(false), mEmbedGlobalInfo(false),
       mEmbedGlobalInfoSkipConstant(false) {}

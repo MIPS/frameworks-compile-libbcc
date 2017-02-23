@@ -39,6 +39,9 @@ private:
   // TODO(jeanluc) Verify that the lifetime is managed correctly.
   Source *mSource;
 
+  // Currently unused.  Will be used in an upcoming CL to fix small_struct bug.
+  unsigned mCompilerVersion;
+
   llvm::CodeGenOpt::Level mOptimizationLevel;
 
   RSLinkRuntimeCallback mLinkRuntimeCallback;
@@ -59,6 +62,12 @@ public:
   ~Script() {}
 
   bool LinkRuntime(const char *rt_path);
+
+  void setCompilerVersion(unsigned pCompilerVersion) {
+    mCompilerVersion = pCompilerVersion;
+  }
+
+  unsigned getCompilerVersion() const { return mCompilerVersion; }
 
   void setOptimizationLevel(llvm::CodeGenOpt::Level pOptimizationLevel) {
     mOptimizationLevel = pOptimizationLevel;
