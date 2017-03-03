@@ -32,17 +32,18 @@ using namespace bcc;
 
 namespace {
 
-// Utility function to test for f16c feature.  This function is only needed for
-// on-device bcc for x86
-bool HasF16C() {
+// Utility function to add feature flags supported by the running CPU.
+// This function is only needed for on-device bcc for x86.
+void AddX86NativeCPUFeatures(std::vector<std::string>* attributes) {
   llvm::StringMap<bool> features;
-  if (!llvm::sys::getHostCPUFeatures(features))
-    return false;
+  if (llvm::sys::getHostCPUFeatures(features)) {
+    for (const auto& f : features)
+      attributes->push_back((f.second ? '+' : '-') + f.first().str());
+  }
 
-  if (features.count("f16c") && features["f16c"])
-    return true;
-  else
-    return false;
+  // LLVM generates AVX code that treats a long3 as 256 bits, while
+  // RenderScript considers a long3 192 bits (http://b/28879581)
+  attributes->push_back("-avx");
 }
 
 }
@@ -194,34 +195,13 @@ bool CompilerConfig::initializeArch() {
 #if defined (PROVIDE_X86_CODEGEN)
   case llvm::Triple::x86:
     getTargetOptions().UseInitArray = true;
-#if defined (DEFAULT_X86_CODEGEN) && !defined (DEFAULT_X86_64_CODEGEN)
+#if defined (DEFAULT_X86_CODEGEN) && !defined (__HOST__)
     setCPU(llvm::sys::getHostCPUName());
+    AddX86NativeCPUFeatures(&attributes);
 #else
     // generic fallback for 32bit x86 targets
     setCPU("atom");
-#endif // DEFAULT_X86_CODEGEN && !DEFAULT_X86_64_CODEGEN
-
-#ifndef __HOST__
-    // If not running on the host, and f16c is available, set it in the feature
-    // string
-    if (HasF16C())
-      attributes.push_back("+f16c");
-#if defined(__SSE3__)
-    attributes.push_back("+sse3");
-    attributes.push_back("+ssse3");
-#endif
-#if defined(__SSE4_1__)
-    attributes.push_back("+sse4.1");
-#endif
-#if defined(__SSE4_2__)
-    attributes.push_back("+sse4.2");
-#endif
-#endif // __HOST__
-
-    // LLVM generates AVX code that treats a long3 as 256 bits, while
-    // RenderScript considers a long3 192 bits (http://b/28879581)
-    attributes.push_back("-avx");
-
+#endif // DEFAULT_X86_CODEGEN && !__HOST__
     break;
 #endif  // PROVIDE_X86_CODEGEN
 
@@ -230,6 +210,7 @@ bool CompilerConfig::initializeArch() {
   case llvm::Triple::x86_64:
 #if defined(DEFAULT_X86_64_CODEGEN) && !defined(__HOST__)
     setCPU(llvm::sys::getHostCPUName());
+    AddX86NativeCPUFeatures(&attributes);
 #else
     // generic fallback for 64bit x86 targets
     setCPU("core2");
@@ -241,18 +222,6 @@ bool CompilerConfig::initializeArch() {
       setCodeModel(llvm::CodeModel::Medium);
     }
     getTargetOptions().UseInitArray = true;
-
-#ifndef __HOST__
-    // If not running on the host, and f16c is available, set it in the feature
-    // string
-    if (HasF16C())
-      attributes.push_back("+f16c");
-#endif // __HOST__
-
-    // LLVM generates AVX code that treats a long3 as 256 bits, while
-    // RenderScript considers a long3 192 bits (http://b/28879581)
-    attributes.push_back("-avx");
-
     break;
 #endif  // PROVIDE_X86_CODEGEN
 
