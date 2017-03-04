@@ -44,11 +44,6 @@
 #include <sstream>
 #include <string>
 
-#ifdef __ANDROID__
-#include <cutils/properties.h>
-#endif
-#include <utils/StopWatch.h>
-
 using namespace bcc;
 
 RSCompilerDriver::RSCompilerDriver() :
