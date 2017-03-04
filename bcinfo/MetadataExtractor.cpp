@@ -21,9 +21,6 @@
 
 #define LOG_TAG "bcinfo"
 #include <log/log.h>
-#ifdef __ANDROID__
-#include <cutils/properties.h>
-#endif
 
 #include "llvm/Bitcode/ReaderWriter.h"
 #include "llvm/IR/Constants.h"
@@ -31,6 +28,10 @@
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Function.h"
 #include "llvm/Support/MemoryBuffer.h"
+
+#ifdef __ANDROID__
+#include "Properties.h"
+#endif
 
 #include <cstdlib>
 
@@ -356,7 +357,7 @@ void MetadataExtractor::populatePragmaMetadata(
   // adb shell setprop debug.rs.precision rs_fp_full
   // adb shell setprop debug.rs.precision rs_fp_relaxed
   // adb shell setprop debug.rs.precision rs_fp_imprecise
-  char PrecisionPropBuf[PROPERTY_VALUE_MAX];
+  char PrecisionPropBuf[PROP_VALUE_MAX];
   const std::string PrecisionPropName("debug.rs.precision");
   property_get("debug.rs.precision", PrecisionPropBuf, "");
   if (PrecisionPropBuf[0]) {

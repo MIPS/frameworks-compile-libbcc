@@ -20,13 +20,29 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#if !defined(RS_SERVER) && defined(__ANDROID__)
-#include <cutils/properties.h>
+#ifdef __ANDROID__
+#include <sys/system_properties.h>
+// TODO: Use rsCppUtils.cpp once the two projects are merged.
+// Currently this implementation is copied over from
+// frameworks/rs/rsCppUtils.cpp
+static inline int property_get(const char *key, char *value, const char *default_value) {
+    int len;
+    len = __system_property_get(key, value);
+    if (len > 0) {
+        return len;
+    }
+
+    if (default_value) {
+        len = strlen(default_value);
+        memcpy(value, default_value, len + 1);
+    }
+    return len;
+}
 #endif
 
 static inline uint32_t getProperty(const char *str) {
-#if !defined(RS_SERVER) && defined(__ANDROID__)
-    char buf[PROPERTY_VALUE_MAX];
+#ifdef __ANDROID__
+    char buf[PROP_VALUE_MAX];
     property_get(str, buf, "0");
     return atoi(buf);
 #else
