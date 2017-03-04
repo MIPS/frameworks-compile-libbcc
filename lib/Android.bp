@@ -75,8 +75,6 @@ cc_library_shared {
             shared_libs: [
                 "libLLVM",
                 "libdl",
-                "libutils",
-                "libcutils",
                 "liblog",
             ],
         },
