@@ -48,6 +48,7 @@ cc_library_shared {
     include_dirs: [
         "frameworks/rs",
         "frameworks/compile/slang",
+        "frameworks/compile/libbcc/lib",
     ],
 
     static_libs: [
@@ -91,7 +92,6 @@ cc_library_shared {
         },
         android: {
             shared_libs: [
-                "libcutils",
                 "liblog",
             ],
             static_libs: [

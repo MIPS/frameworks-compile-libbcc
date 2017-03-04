@@ -25,8 +25,6 @@
 #include <cstring>
 #include <new>
 
-#include <utils/FileMap.h>
-
 using namespace bcc;
 
 #ifdef _WIN32
