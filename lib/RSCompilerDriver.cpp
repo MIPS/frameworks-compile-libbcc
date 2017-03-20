@@ -267,9 +267,8 @@ bool RSCompilerDriver::build(BCCContext &pContext,
   script.setEmbedGlobalInfo(mEmbedGlobalInfo);
   script.setEmbedGlobalInfoSkipConstant(mEmbedGlobalInfoSkipConstant);
 
-  // Read information from bitcode wrapper.
+  // Read optimization level from bitcode wrapper.
   bcinfo::BitcodeWrapper wrapper(pBitcode, pBitcodeSize);
-  script.setCompilerVersion(wrapper.getCompilerVersion());
   script.setOptimizationLevel(static_cast<llvm::CodeGenOpt::Level>(
                               wrapper.getOptimizationLevel()));
 
@@ -324,8 +323,22 @@ bool RSCompilerDriver::buildScriptGroup(
   llvm::LLVMContext& context = Context.getLLVMContext();
   llvm::Module module("Merged Script Group", context);
 
+  unsigned wrapperCompilerVersion = 0, wrapperOptimizationLevel = 0;
+  bool gotFirstSource = false;
   llvm::Linker linker(module);
   for (Source* source : sources) {
+    unsigned sourceWrapperCompilerVersion, sourceWrapperOptimizationLevel;
+    source->getWrapperInformation(&sourceWrapperCompilerVersion, &sourceWrapperOptimizationLevel);
+    if (gotFirstSource) {
+      if ((wrapperCompilerVersion != sourceWrapperCompilerVersion) ||
+          (wrapperOptimizationLevel != sourceWrapperOptimizationLevel))
+        ALOGE("ScriptGroup source files have inconsistent metadata");
+        return false;
+    } else {
+      wrapperCompilerVersion = sourceWrapperCompilerVersion;
+      wrapperOptimizationLevel = sourceWrapperOptimizationLevel;
+      gotFirstSource = true;
+    }
     std::unique_ptr<llvm::Module> sourceModule(&source->getModule());
     if (linker.linkInModule(std::move(sourceModule))) {
       ALOGE("Linking for module in source failed.");
@@ -333,6 +346,13 @@ bool RSCompilerDriver::buildScriptGroup(
     }
     // source->getModule() is destroyed after linking.
     source->markModuleDestroyed();
+    // linking copies metadata from source->getModule(), but we don't
+    // want the wrapper metadata (we'll be reconstructing this when we
+    // instantiate a Source instance from the new Module).
+    llvm::NamedMDNode *const wrapperMDNode =
+        module.getNamedMetadata(bcinfo::MetadataExtractor::kWrapperMetadataName);
+    bccAssert(wrapperMDNode != nullptr);
+    module.eraseNamedMetadata(wrapperMDNode);
   }
 
   // ---------------------------------------------------------------------------
@@ -376,7 +396,9 @@ bool RSCompilerDriver::buildScriptGroup(
   // ---------------------------------------------------------------------------
 
   const std::unique_ptr<Source> source(
-      Source::CreateFromModule(Context, pOutputFilepath, module, true));
+      Source::CreateFromModule(Context, pOutputFilepath, module,
+                               wrapperCompilerVersion, wrapperOptimizationLevel,
+                               true));
   Script script(source.get());
 
   // Embed the info string directly in the ELF
