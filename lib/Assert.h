@@ -31,8 +31,10 @@
 
 #else
 
-#define LOG_TAG "bcc"
-#include <log/log.h>
+#ifndef LOG_TAG
+#   define LOG_TAG "bcc"
+#   include <log/log.h>
+#endif
 
 #define __ABORT_ON_FAILURES 1
 

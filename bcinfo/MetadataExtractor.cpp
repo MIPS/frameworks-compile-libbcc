@@ -22,6 +22,8 @@
 #define LOG_TAG "bcinfo"
 #include <log/log.h>
 
+#include "Assert.h"
+
 #include "llvm/Bitcode/ReaderWriter.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/LLVMContext.h"
@@ -173,6 +175,8 @@ static const llvm::StringRef ChecksumMetadataName = "#rs_build_checksum";
 // unit.
 static const llvm::StringRef DebugInfoMetadataName = "llvm.dbg.cu";
 
+const char MetadataExtractor::kWrapperMetadataName[] = "#rs_wrapper";
+
 MetadataExtractor::MetadataExtractor(const char *bitcode, size_t bitcodeSize)
     : mModule(nullptr), mBitcode(bitcode), mBitcodeSize(bitcodeSize),
       mExportVarCount(0), mExportFuncCount(0), mExportForEachSignatureCount(0),
@@ -186,7 +190,6 @@ MetadataExtractor::MetadataExtractor(const char *bitcode, size_t bitcodeSize)
       mRSFloatPrecision(RS_FP_Full), mIsThreadable(true),
       mBuildChecksum(nullptr), mHasDebugInfo(false) {
   BitcodeWrapper wrapper(bitcode, bitcodeSize);
-  mTargetAPI = wrapper.getTargetAPI();
   mCompilerVersion = wrapper.getCompilerVersion();
   mOptimizationLevel = wrapper.getOptimizationLevel();
 }
@@ -203,8 +206,14 @@ MetadataExtractor::MetadataExtractor(const llvm::Module *module)
       mObjectSlotCount(0), mObjectSlotList(nullptr),
       mRSFloatPrecision(RS_FP_Full), mIsThreadable(true),
       mBuildChecksum(nullptr) {
-  mCompilerVersion = RS_VERSION;  // Default to the actual current version.
-  mOptimizationLevel = 3;
+  const llvm::NamedMDNode *const wrapperMDNode = module->getNamedMetadata(kWrapperMetadataName);
+  bccAssert((wrapperMDNode != nullptr) && (wrapperMDNode->getNumOperands() == 1));
+  const llvm::MDNode *const wrapperMDTuple = wrapperMDNode->getOperand(0);
+
+  bool success = true;
+  success &= extractUIntFromMetadataString(&mCompilerVersion, wrapperMDTuple->getOperand(0));
+  success &= extractUIntFromMetadataString(&mOptimizationLevel, wrapperMDTuple->getOperand(1));
+  bccAssert(success);
 }
 
 

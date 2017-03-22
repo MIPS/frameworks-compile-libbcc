@@ -105,7 +105,6 @@ class MetadataExtractor {
   size_t mObjectSlotCount;
   const uint32_t *mObjectSlotList;
 
-  uint32_t mTargetAPI;
   uint32_t mCompilerVersion;
   uint32_t mOptimizationLevel;
 
@@ -131,6 +130,12 @@ class MetadataExtractor {
                               uint32_t Signature);
 
  public:
+
+  // Name of metadata node where information extracted from the
+  // bitcode wrapper should have been stored when we use the
+  // MetadataExtractor constructor that takes a Module as a parameter.
+  static const char kWrapperMetadataName[];
+
   /**
    * Reads metadata from \p bitcode.
    *
@@ -143,6 +148,8 @@ class MetadataExtractor {
    * Reads metadata from \p module.
    *
    * \param module - input module.
+   *
+   * module must contain a metadata node named kWrapperMetadataName.
    */
   explicit MetadataExtractor(const llvm::Module *module);
 
@@ -154,16 +161,6 @@ class MetadataExtractor {
    * \return true on success and false if an error occurred.
    */
   bool extract();
-
-  /**
-   * \return target API level of this bitcode.
-   *
-   * The target API is used during the SDK compilation to provide proper
-   * visibility of the RenderScript runtime API functions.
-   */
-  uint32_t getTargetAPI() const {
-    return mTargetAPI;
-  }
 
   /**
    * \return number of exported global variables (slots) in this script/module.
@@ -272,14 +269,17 @@ class MetadataExtractor {
   }
 
   /**
-   * \return compiler version that generated this bitcode.
+   * \return compiler version indicating which guarantees this bitcode is
+   *         known to obey.
    */
   uint32_t getCompilerVersion() const {
     return mCompilerVersion;
   }
 
   /**
-   * \return compiler optimization level for this bitcode.
+   * \return compiler optimization level for this bitcode.  In the case of
+   *         linked bitcode (user_bitcode + libclcore_bitcode), this is the
+   *         optimization level of user_bitcode.
    */
   uint32_t getOptimizationLevel() const {
     return mOptimizationLevel;

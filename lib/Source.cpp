@@ -22,6 +22,7 @@
 #include <new>
 
 #include <llvm/ADT/STLExtras.h>
+#include <llvm/ADT/StringExtras.h>
 #include <llvm/Bitcode/ReaderWriter.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
@@ -30,6 +31,8 @@
 #include <llvm/Support/MemoryBuffer.h>
 #include "llvm/Support/raw_ostream.h"
 
+#include "Assert.h"
+#include "bcinfo/BitcodeWrapper.h"
 #include "bcinfo/MetadataExtractor.h"
 
 #include "BCCContextImpl.h"
@@ -52,9 +55,44 @@ static inline std::unique_ptr<llvm::Module> helper_load_bitcode(llvm::LLVMContex
   return std::move(moduleOrError.get());
 }
 
+static void helper_get_module_metadata_from_bitcode_wrapper(
+    uint32_t *compilerVersion, uint32_t *optimizationLevel,
+    const bcinfo::BitcodeWrapper &wrapper) {
+  *compilerVersion = wrapper.getCompilerVersion();
+  *optimizationLevel = wrapper.getOptimizationLevel();
+}
+
+static void helper_set_module_metadata_from_bitcode_wrapper(llvm::Module &module,
+                                                            const uint32_t compilerVersion,
+                                                            const uint32_t optimizationLevel) {
+  llvm::LLVMContext &llvmContext = module.getContext();
+
+  llvm::NamedMDNode *const wrapperMDNode =
+      module.getOrInsertNamedMetadata(bcinfo::MetadataExtractor::kWrapperMetadataName);
+  bccAssert(wrapperMDNode->getNumOperands() == 0);  // expect to have just now created this node
+
+  llvm::SmallVector<llvm::Metadata *, 2> wrapperInfo = {
+    llvm::MDString::get(llvmContext, llvm::utostr(compilerVersion)),
+    llvm::MDString::get(llvmContext, llvm::utostr(optimizationLevel))
+  };
+
+  wrapperMDNode->addOperand(llvm::MDTuple::get(llvmContext, wrapperInfo));
+}
+
 } // end anonymous namespace
 
 namespace bcc {
+
+unsigned Source::getCompilerVersion() const {
+  return bcinfo::MetadataExtractor(&getModule()).getCompilerVersion();
+}
+
+void Source::getWrapperInformation(unsigned *compilerVersion,
+                                   unsigned *optimizationLevel) const {
+  const bcinfo::MetadataExtractor &me = bcinfo::MetadataExtractor(&getModule());
+  *compilerVersion = me.getCompilerVersion();
+  *optimizationLevel = me.getOptimizationLevel();
+}
 
 void Source::setModule(llvm::Module *pModule) {
   if (!mNoDelete && (mModule != pModule)) delete mModule;
@@ -84,7 +122,12 @@ Source *Source::CreateFromBuffer(BCCContext &pContext,
     return nullptr;
   }
 
-  Source *result = CreateFromModule(pContext, pName, *module, /* pNoDelete */false);
+  uint32_t compilerVersion, optimizationLevel;
+  helper_get_module_metadata_from_bitcode_wrapper(&compilerVersion, &optimizationLevel,
+                                                  bcinfo::BitcodeWrapper(pBitcode, pBitcodeSize));
+  Source *result = CreateFromModule(pContext, pName, *module,
+                                    compilerVersion, optimizationLevel,
+                                    /* pNoDelete */false);
   if (result == nullptr) {
     delete module;
   }
@@ -103,6 +146,11 @@ Source *Source::CreateFromFile(BCCContext &pContext, const std::string &pPath) {
   }
   std::unique_ptr<llvm::MemoryBuffer> input_data = std::move(mb_or_error.get());
 
+  uint32_t compilerVersion, optimizationLevel;
+  helper_get_module_metadata_from_bitcode_wrapper(&compilerVersion, &optimizationLevel,
+                                                  bcinfo::BitcodeWrapper(input_data->getBufferStart(),
+                                                                         input_data->getBufferSize()));
+
   std::unique_ptr<llvm::MemoryBuffer> input_memory(input_data.release());
   auto managedModule = helper_load_bitcode(pContext.mImpl->mLLVMContext,
                                            std::move(input_memory));
@@ -114,7 +162,9 @@ Source *Source::CreateFromFile(BCCContext &pContext, const std::string &pPath) {
     return nullptr;
   }
 
-  Source *result = CreateFromModule(pContext, pPath.c_str(), *module, /* pNoDelete */false);
+  Source *result = CreateFromModule(pContext, pPath.c_str(), *module,
+                                    compilerVersion, optimizationLevel,
+                                    /* pNoDelete */false);
   if (result == nullptr) {
     delete module;
   }
@@ -123,6 +173,8 @@ Source *Source::CreateFromFile(BCCContext &pContext, const std::string &pPath) {
 }
 
 Source *Source::CreateFromModule(BCCContext &pContext, const char* name, llvm::Module &pModule,
+                                 const uint32_t compilerVersion,
+                                 const uint32_t optimizationLevel,
                                  bool pNoDelete) {
   std::string ErrorInfo;
   llvm::raw_string_ostream ErrorStream(ErrorInfo);
@@ -138,6 +190,7 @@ Source *Source::CreateFromModule(BCCContext &pContext, const char* name, llvm::M
     ALOGE("Out of memory during Source object allocation for `%s'!",
           pModule.getModuleIdentifier().c_str());
   }
+  helper_set_module_metadata_from_bitcode_wrapper(pModule, compilerVersion, optimizationLevel);
   return result;
 }
 
@@ -166,24 +219,6 @@ bool Source::merge(Source &pSource) {
   pSource.markModuleDestroyed();
 
   return true;
-}
-
-Source *Source::CreateEmpty(BCCContext &pContext, const std::string &pName) {
-  // Create an empty module
-  llvm::Module *module =
-      new (std::nothrow) llvm::Module(pName, pContext.mImpl->mLLVMContext);
-
-  if (module == nullptr) {
-    ALOGE("Out of memory when creating empty LLVM module `%s'!", pName.c_str());
-    return nullptr;
-  }
-
-  Source *result = CreateFromModule(pContext, pName.c_str(), *module, /* pNoDelete */false);
-  if (result == nullptr) {
-    delete module;
-  }
-
-  return result;
 }
 
 const std::string &Source::getIdentifier() const {
