@@ -27,6 +27,8 @@ cc_binary {
         "libLLVM",
     ],
 
+    header_libs: ["slang_headers"],
+
     target: {
         host: {
             host_ldlibs: ["-ldl"],

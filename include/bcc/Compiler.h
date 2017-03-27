@@ -67,7 +67,9 @@ public:
 
     kIllegalGlobalFunction,
 
-    kErrInvalidTargetMachine
+    kErrInvalidTargetMachine,
+
+    kErrInvalidLayout
   };
 
   static const char *GetErrorString(enum ErrorCode pErrCode);
