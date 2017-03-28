@@ -20,6 +20,7 @@
 #include "FileMutex.h"
 #include "Log.h"
 #include "RSScriptGroupFusion.h"
+#include "slang_version.h"
 
 #include "bcc/BCCContext.h"
 #include "bcc/Compiler.h"
@@ -130,7 +131,8 @@ Compiler::ErrorCode RSCompilerDriver::compileScript(Script& pScript, const char*
   // (during LinkRuntime below) to ensure that RenderScript-driver-provided
   // structs (like Allocation_t) don't get forced into using the ARM layout
   // rules.
-  if (mCompiler.getTargetMachine().getTargetTriple().getArch() == llvm::Triple::x86) {
+  if (!pScript.isStructExplicitlyPaddedBySlang() &&
+      (mCompiler.getTargetMachine().getTargetTriple().getArch() == llvm::Triple::x86)) {
     mCompiler.translateGEPs(pScript);
   }
 
@@ -275,7 +277,7 @@ bool RSCompilerDriver::build(BCCContext &pContext,
 // Assertion-enabled builds can't compile legacy bitcode (due to the use of
 // getName() with anonymous structure definitions).
 #ifdef _DEBUG
-  static const uint32_t kSlangMinimumFixedStructureNames = 2310;
+  static const uint32_t kSlangMinimumFixedStructureNames = SlangVersion::M_RS_OBJECT;
   uint32_t version = wrapper.getCompilerVersion();
   if (version < kSlangMinimumFixedStructureNames) {
     ALOGE("Found invalid legacy bitcode compiled with a version %u llvm-rs-cc "

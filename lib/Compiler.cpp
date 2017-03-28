@@ -45,6 +45,74 @@
 #include <string>
 #include <set>
 
+namespace {
+
+// Name of metadata node where list of exported types resides
+// (should be synced with slang_rs_metadata.h)
+static const llvm::StringRef ExportedTypeMetadataName = "#rs_export_type";
+
+// Every exported struct type must have the same layout according to
+// the Module's DataLayout that it does according to the
+// TargetMachine's DataLayout -- that is, the front end (represented
+// by Module) and back end (represented by TargetMachine) must agree.
+bool validateLayoutOfExportedTypes(const llvm::Module &module,
+                                   const llvm::DataLayout &moduleDataLayout,
+                                   const llvm::DataLayout &targetDataLayout) {
+  if (moduleDataLayout == targetDataLayout)
+    return true;
+
+  const llvm::NamedMDNode *const exportedTypesMD =
+      module.getNamedMetadata(ExportedTypeMetadataName);
+  if (!exportedTypesMD)
+    return true;
+
+  bool allOk = true;
+  for (const llvm::MDNode *const exportedTypeMD : exportedTypesMD->operands()) {
+    bccAssert(exportedTypeMD->getNumOperands() == 1);
+
+    // The name of the type in LLVM is the name of the type in the
+    // metadata with "struct." prepended.
+    std::string exportedTypeName =
+        "struct." +
+        llvm::cast<llvm::MDString>(exportedTypeMD->getOperand(0))->getString().str();
+
+    llvm::StructType *const exportedType = module.getTypeByName(exportedTypeName);
+
+    if (!exportedType) {
+      // presumably this means the type got optimized away
+      continue;
+    }
+
+    const llvm::StructLayout *const moduleStructLayout = moduleDataLayout.getStructLayout(exportedType);
+    const llvm::StructLayout *const targetStructLayout = targetDataLayout.getStructLayout(exportedType);
+
+    if (moduleStructLayout->getSizeInBits() != targetStructLayout->getSizeInBits()) {
+      ALOGE("%s: getSizeInBits() does not match (%u, %u)", exportedTypeName.c_str(),
+            unsigned(moduleStructLayout->getSizeInBits()), unsigned(targetStructLayout->getSizeInBits()));
+      allOk = false;
+    }
+
+    // We deliberately do not check alignment of the struct as a whole -- the explicit padding
+    // from slang doesn't force the alignment.
+
+    for (unsigned elementCount = exportedType->getNumElements(), elementIdx = 0;
+         elementIdx < elementCount; ++elementIdx) {
+      if (moduleStructLayout->getElementOffsetInBits(elementIdx) !=
+          targetStructLayout->getElementOffsetInBits(elementIdx)) {
+        ALOGE("%s: getElementOffsetInBits(%u) does not match (%u, %u)",
+              exportedTypeName.c_str(), elementIdx,
+              unsigned(moduleStructLayout->getElementOffsetInBits(elementIdx)),
+              unsigned(targetStructLayout->getElementOffsetInBits(elementIdx)));
+        allOk = false;
+      }
+    }
+  }
+
+  return allOk;
+}
+
+}  // end unnamed namespace
+
 using namespace bcc;
 
 const char *Compiler::GetErrorString(enum ErrorCode pErrCode) {
@@ -77,6 +145,8 @@ const char *Compiler::GetErrorString(enum ErrorCode pErrCode) {
     return "Use of undefined external function";
   case kErrInvalidTargetMachine:
     return "Invalid/unexpected llvm::TargetMachine.";
+  case kErrInvalidLayout:
+    return "Invalid layout (RenderScript ABI and native ABI are incompatible)";
   }
 
   // This assert should never be reached as the compiler verifies that the
@@ -252,12 +322,17 @@ enum Compiler::ErrorCode Compiler::compile(Script &script,
     return kErrInvalidSource;
   }
 
-  if (getTargetMachine().getTargetTriple().getArch() == llvm::Triple::x86) {
-    // Detect and fail if TargetMachine datalayout is different than what we
-    // expect.  This is to detect changes in default target layout for x86 and
-    // update X86_CUSTOM_DL_STRING in include/bcc/Config/Config.h appropriately.
-    if (dl.getStringRepresentation().compare(X86_DEFAULT_DL_STRING) != 0) {
-      return kErrInvalidTargetMachine;
+  if (script.isStructExplicitlyPaddedBySlang()) {
+    if (!validateLayoutOfExportedTypes(module, module.getDataLayout(), dl))
+      return kErrInvalidLayout;
+  } else {
+    if (getTargetMachine().getTargetTriple().getArch() == llvm::Triple::x86) {
+      // Detect and fail if TargetMachine datalayout is different than what we
+      // expect.  This is to detect changes in default target layout for x86 and
+      // update X86_CUSTOM_DL_STRING in include/bcc/Config/Config.h appropriately.
+      if (dl.getStringRepresentation().compare(X86_DEFAULT_DL_STRING) != 0) {
+        return kErrInvalidTargetMachine;
+      }
     }
   }
 
