@@ -33,14 +33,11 @@ cc_binary_host {
             host_ldlibs: ["-ldl"],
         },
     },
-
     shared_libs: [
         "libbcc",
         "libbcinfo",
         "libLLVM",
     ],
-
-    header_libs: ["slang_headers"],
 
     product_variables: {
         unbundled_build: {
