@@ -43,6 +43,8 @@ cc_library_shared {
 
     shared_libs: ["libbcinfo"],
 
+    header_libs: ["slang_headers"],
+
     target: {
         windows: {
             enabled: true,
