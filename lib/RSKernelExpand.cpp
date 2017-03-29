@@ -22,8 +22,6 @@
 #include "bcc/Config.h"
 #include "bcinfo/MetadataExtractor.h"
 
-#include "slang_version.h"
-
 #include <cstdlib>
 #include <functional>
 #include <unordered_set>
@@ -91,7 +89,7 @@ public:
   static char ID;
 
 private:
-  static const size_t RS_KERNEL_INPUT_LIMIT = 8;  // see frameworks/base/libs/rs/cpu_ref/rsCpuCoreRuntime.h
+  static const size_t RS_KERNEL_INPUT_LIMIT = 8; // see frameworks/base/libs/rs/cpu_ref/rsCpuCoreRuntime.h
 
   typedef std::unordered_set<llvm::Function *> FunctionSet;
 
@@ -132,8 +130,6 @@ private:
   llvm::FunctionType *ExpandedForEachType;
   llvm::Type *RsExpandKernelDriverInfoPfxTy;
 
-  // Initialized when we begin to process each Module
-  bool mStructExplicitlyPaddedBySlang;
   uint32_t mExportForEachCount;
   const char **mExportForEachNameList;
   const uint32_t *mExportForEachSignatureList;
@@ -678,7 +674,7 @@ public:
       llvm::LoadInst *InBufPtr = Builder.CreateLoad(InBufPtrAddr, "input_buf");
 
       llvm::Value *CastInBufPtr = nullptr;
-      if (mStructExplicitlyPaddedBySlang || (Module->getTargetTriple() != DEFAULT_X86_TRIPLE_STRING)) {
+      if (Module->getTargetTriple() != DEFAULT_X86_TRIPLE_STRING) {
         CastInBufPtr = Builder.CreatePointerCast(InBufPtr, InType, "casted_in");
       } else {
         // The disagreement between module and x86 target machine datalayout
@@ -686,7 +682,7 @@ public:
         // code and bcc codegen for GetElementPtr. To solve this issue, skip the
         // cast to InType and leave CastInBufPtr as an int8_t*.  The buffer is
         // later indexed with an explicit byte offset computed based on
-        // X86_CUSTOM_DL_STRING and then bitcast to actual input type.
+        // X86_CUSTOM_DL_STRING and then bitcast it to actual input type.
         CastInBufPtr = InBufPtr;
       }
 
@@ -732,7 +728,7 @@ public:
     for (size_t Index = 0; Index < NumInputs; ++Index) {
 
       llvm::Value *InPtr = nullptr;
-      if (mStructExplicitlyPaddedBySlang || (Module->getTargetTriple() != DEFAULT_X86_TRIPLE_STRING)) {
+      if (Module->getTargetTriple() != DEFAULT_X86_TRIPLE_STRING) {
         InPtr = Builder.CreateInBoundsGEP(InBufPtrs[Index], Offset);
       } else {
         // Treat x86 input buffer as byte[], get indexed pointer with explicit
@@ -788,7 +784,7 @@ public:
     }
 
     llvm::DataLayout DL(Module);
-    if (!mStructExplicitlyPaddedBySlang && (Module->getTargetTriple() == DEFAULT_X86_TRIPLE_STRING)) {
+    if (Module->getTargetTriple() == DEFAULT_X86_TRIPLE_STRING) {
       DL.reset(X86_CUSTOM_DL_STRING);
     }
 
@@ -921,7 +917,7 @@ public:
 
     // TODO: Refactor this to share functionality with ExpandOldStyleForEach.
     llvm::DataLayout DL(Module);
-    if (!mStructExplicitlyPaddedBySlang && (Module->getTargetTriple() == DEFAULT_X86_TRIPLE_STRING)) {
+    if (Module->getTargetTriple() == DEFAULT_X86_TRIPLE_STRING) {
       DL.reset(X86_CUSTOM_DL_STRING);
     }
     llvm::Type *Int32Ty = llvm::Type::getInt32Ty(*Context);
@@ -1005,7 +1001,7 @@ public:
         OutBasePtr->setMetadata("tbaa", TBAAPointer);
       }
 
-      if (mStructExplicitlyPaddedBySlang || (Module->getTargetTriple() != DEFAULT_X86_TRIPLE_STRING)) {
+      if (Module->getTargetTriple() != DEFAULT_X86_TRIPLE_STRING) {
         CastedOutBasePtr = Builder.CreatePointerCast(OutBasePtr, OutTy, "casted_out");
       } else {
         // The disagreement between module and x86 target machine datalayout
@@ -1013,7 +1009,7 @@ public:
         // code and bcc codegen for GetElementPtr. To solve this issue, skip the
         // cast to OutTy and leave CastedOutBasePtr as an int8_t*.  The buffer
         // is later indexed with an explicit byte offset computed based on
-        // X86_CUSTOM_DL_STRING and then bitcast to actual output type.
+        // X86_CUSTOM_DL_STRING and then bitcast it to actual output type.
         CastedOutBasePtr = OutBasePtr;
       }
     }
@@ -1057,7 +1053,7 @@ public:
     if (CastedOutBasePtr) {
       llvm::Value *OutOffset = Builder.CreateSub(IV, Arg_x1);
 
-      if (mStructExplicitlyPaddedBySlang || (Module->getTargetTriple() != DEFAULT_X86_TRIPLE_STRING)) {
+      if (Module->getTargetTriple() != DEFAULT_X86_TRIPLE_STRING) {
         OutPtr = Builder.CreateInBoundsGEP(CastedOutBasePtr, OutOffset);
       } else {
         // Treat x86 output buffer as byte[], get indexed pointer with explicit
@@ -1377,8 +1373,6 @@ public:
       ALOGE("Could not extract metadata from module!");
       return false;
     }
-
-    mStructExplicitlyPaddedBySlang = (me.getCompilerVersion() >= SlangVersion::N_STRUCT_EXPLICIT_PADDING);
 
     // Expand forEach_* style kernels.
     mExportForEachCount = me.getExportForEachSignatureCount();

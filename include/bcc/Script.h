@@ -17,8 +17,6 @@
 #ifndef BCC_SCRIPT_H
 #define BCC_SCRIPT_H
 
-#include "slang_version.h"
-
 #include <llvm/Support/CodeGen.h>
 #include "bcc/Source.h"
 
@@ -65,10 +63,6 @@ public:
 
   unsigned getCompilerVersion() const {
     return getSource().getCompilerVersion();
-  }
-
-  bool isStructExplicitlyPaddedBySlang() const {
-    return getCompilerVersion() >= SlangVersion::N_STRUCT_EXPLICIT_PADDING;
   }
 
   void setOptimizationLevel(llvm::CodeGenOpt::Level pOptimizationLevel) {
