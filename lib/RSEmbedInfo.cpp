@@ -23,11 +23,13 @@
 #include "bcc/Config.h"
 #include "bcinfo/MetadataExtractor.h"
 
+#include <string>
 #include <cstdlib>
 #include <vector>
 
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Function.h>
+#include <llvm/IR/Metadata.h>
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
@@ -155,6 +157,32 @@ public:
 
     if (buildChecksum != nullptr && buildChecksum[0]) {
       s << "buildChecksum: " << buildChecksum << "\n";
+    }
+
+    {
+      // As per `exportReduceCount`'s linewise fields, we use the literal `"."`
+      // to signify the empty field. This makes it easy to parse when it's
+      // missing.
+      llvm::StringRef slangVersion(".");
+      if (auto nmd = module->getNamedMetadata("slang.llvm.version")) {
+        if (auto md = nmd->getOperand(0)) {
+          if (const auto ver =
+                  llvm::dyn_cast<llvm::MDString>(md->getOperand(0))) {
+            slangVersion = ver->getString();
+          }
+        }
+      }
+      s << "versionInfo: 2\n";
+      s << "bcc - " << LLVM_VERSION_STRING << "\n";
+      s << "slang - " << slangVersion << "\n";
+      if (slangVersion != LLVM_VERSION_STRING && me.hasDebugInfo()) {
+        ALOGW(
+            "The debug info in module '%s' has a different version than "
+            "expected (%s, expecting %s). The debugging experience may be "
+            "unreliable.",
+            module->getModuleIdentifier().c_str(), slangVersion.str().c_str(),
+            LLVM_VERSION_STRING);
+      }
     }
 
     s.flush();
