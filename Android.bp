@@ -22,7 +22,6 @@ cc_defaults {
         "libbcc-targets",
     ],
 
-    clang: true,
     cflags: [
         "-Wall",
         "-Wno-unused-parameter",
