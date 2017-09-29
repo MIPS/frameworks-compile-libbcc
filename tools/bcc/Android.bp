@@ -30,12 +30,8 @@ cc_binary {
     header_libs: ["slang_headers"],
 
     target: {
-        host: {
-            host_ldlibs: ["-ldl"],
-        },
         android: {
             shared_libs: [
-                "libdl",
                 "liblog",
                 "libvndksupport",
             ],
