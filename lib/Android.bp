@@ -51,18 +51,9 @@ cc_library_shared {
             shared_libs: ["libLLVM"],
         },
         darwin: {
-            host_ldlibs: [
-                "-ldl",
-                "-lpthread",
-            ],
-
             shared_libs: ["libLLVM"],
         },
         linux: {
-            host_ldlibs: [
-                "-ldl",
-                "-lpthread",
-            ],
             static_libs: ["libLLVMLinker"],
             allow_undefined_symbols: true,
         },
