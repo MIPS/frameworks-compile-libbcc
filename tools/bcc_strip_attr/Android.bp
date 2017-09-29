@@ -22,20 +22,4 @@ cc_binary_host {
 
     srcs: ["bcc_strip_attr.cpp"],
     shared_libs: ["libLLVM"],
-
-    host_ldlibs: ["-lm"],
-    target: {
-        darwin: {
-            host_ldlibs: [
-                "-lpthread",
-                "-ldl",
-            ],
-        },
-        linux: {
-            host_ldlibs: [
-                "-lpthread",
-                "-ldl",
-            ],
-        },
-    },
 }
