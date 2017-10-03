@@ -53,7 +53,7 @@ cc_library_shared {
         darwin: {
             shared_libs: ["libLLVM"],
         },
-        linux: {
+        linux_glibc: {
             static_libs: ["libLLVMLinker"],
             allow_undefined_symbols: true,
         },
