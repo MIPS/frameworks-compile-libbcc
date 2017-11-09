@@ -21,5 +21,5 @@ cc_binary_host {
     defaults: ["libbcc-defaults"],
 
     srcs: ["bcc_strip_attr.cpp"],
-    shared_libs: ["libLLVM"],
+    shared_libs: ["libLLVM_android"],
 }
