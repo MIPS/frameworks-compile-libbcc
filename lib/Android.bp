@@ -48,10 +48,10 @@ cc_library_shared {
     target: {
         windows: {
             enabled: true,
-            shared_libs: ["libLLVM"],
+            shared_libs: ["libLLVM_android"],
         },
         darwin: {
-            shared_libs: ["libLLVM"],
+            shared_libs: ["libLLVM_android"],
         },
         linux_glibc: {
             static_libs: ["libLLVMLinker"],
@@ -66,7 +66,7 @@ cc_library_shared {
         },
         android: {
             shared_libs: [
-                "libLLVM",
+                "libLLVM_android",
                 "libdl",
                 "liblog",
             ],
